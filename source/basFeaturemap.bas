@@ -129,16 +129,34 @@ End Function
 '-------------------------------------------------------------
 ' Description   : find all feature files
 ' Parameter     : pstrFeatureDir    - directory containing all feature files
-' Returnvalue   : list of feature file names as collection
+' Returnvalue   : list of feature file names as array
 '-------------------------------------------------------------
-Private Function getFeatureFileNames(pstrFeatureDir As String) As Collection
+Private Function getFeatureFileNames(pstrFeatureDir As String) As Variant
 
     Dim colFeatureFileNames As Collection
+    'Applescript code for Mac version
+    Dim strScript As String
+    Dim varFeatureFiles As Variant
     
     On Error GoTo error_handler
+    #If Mac Then
+        strScript = "set vFeatureFileNames to {}" & vbLf & _
+                    "tell application ""Finder""" & vbLf & _
+                        "set vFeaturesFolder to """ & pstrFeatureDir & """ as alias" & vbLf & _
+                        "set vFeatureFiles to (get files of vFeaturesFolder whose name ends with "".feature"")" & vbLf & _
+                        "repeat with vFeatureFile in vFeatureFiles" & vbLf & _
+                                "set end of vFeatureFileNames to get name of vFeatureFile" & vbLf & _
+                        "end repeat" & vbLf & _
+                    "end tell" & vbLf & _
+                    "return vFeatureFileNames"
+        varFeatureFiles = MacScript(strScript)
+        varFeatureFiles = Split(varFeatureFiles, ",")
+    #Else
     
+    #End If
     
-    Set getFeatureFileNames = colFeatureFileNames
+    basSystem.log "found " & UBound(varFeatureFiles) + 1 & " .feature files"
+    Set getFeatureFileNames = varFeatureFiles
     Exit Function
     
 error_handler:
