@@ -153,7 +153,6 @@ Private Function getFeatureFileNames(pstrFeatureDir As String) As Variant
 error_handler:
     basSystem.log_error "basFeaturemap.getFeatureFileNames"
 End Function
-
 '-------------------------------------------------------------
 ' Description   : read data from a feature file
 ' Parameter     : pstrFeatureFile    - full filename of the feature file
@@ -163,88 +162,124 @@ Private Function readDataFromFeatureFile(ByVal pstrFeatureFile As String) As Col
 
     Dim strDomain As String
     Dim strAggregate As String
-    Dim strTagFeatureStatus As String
-    Dim strTagScenarioStatus As String
+    Dim strFeature As String
+    Dim varFeature As Variant            'split feature name into an array if it contains the aggregate
     Dim colScenarios As New Collection
     Dim strScenarioName As String
     Dim lngLineNumber As Long
     Dim strScript As String
     Dim varFileText As Variant
     Dim strParagraph As String
-    
+    Dim colFeatureTags As New Collection
+    Dim colScenarioTags As Collection
     
     On Error GoTo error_handler
     strDomain = "undefined"
-    strAggregate = "undefined"
-    strTagFeatureStatus = ""
-    strTagScenarioStatus = ""
     lngLineNumber = 0
     
+    basSystem.log "read data from feature file " & pstrFeatureFile
     'read lines of the feature file into an array
     #If Mac Then
         strScript = "set AppleScript's text item delimiters to ""#@#@""" & vbLf & _
                     "return (paragraphs of (read (""" & pstrFeatureFile & """ as alias) as Çclass utf8È)) as string"
         varFileText = Split(MacScript(strScript), "#@#@")
     #Else
-    
+        'TODO add windows support
     #End If
-    'look for the feature
-    While lngLineNumber <= UBound(varFileText)
+    'read all the lines above Feature:
+    Do While lngLineNumber <= UBound(varFileText)
         strParagraph = varFileText(lngLineNumber)
+        'found feature?
+        If InStr(LCase(strParagraph), "feature:") > 0 Then
+            strFeature = Right(strParagraph, Len(strParagraph) - InStr(LCase(strParagraph), "feature:") - 8)
+            If cblnGetAggregatesFromFeatureName Then
+                varFeature = Split(strFeature, " - ")
+                If UBound(varFeature) > 0 Then
+                    strAggregate = varFeature(0)
+                    strFeature = Right(strFeature, Len(strFeature) - Len(strAggregate) - 3)
+                Else
+                    strAggregate = "undefined"
+                End If
+            End If
+            Exit Do
+        End If
+        findTags colFeatureTags, strParagraph
         lngLineNumber = lngLineNumber + 1
-'        -- look for a domain tag
-'        set AppleScript's text item delimiters to cDomainTag
-'        if (count text items of text of vParagraph) > 1 then
-'            set vDomain to first word of text item 2 of text of vParagraph
-'        End If
-'        -- look for a status tag
-'        set AppleScript's text item delimiters to cStatusTag
-'        if (count text items of text of vParagraph) > 1 then
-'            set vTagFeatureStatus to first word of text item 2 of text of vParagraph
-'        End If
-'        -- look for the feature name
-'        set AppleScript's text item delimiters to ": "
-'        if first word of vParagraph = "Feature" then
-'            set vFeature to text item 2 of vParagraph
-'            -- try to get the aggregate name, assum the naming is using this scheme <aggregate name> - <feature name>
-'            set AppleScript's text item delimiters to " - "
-'            if cDisableAggregates is false and (count text items of vFeature) = 2 then
-'                set vAggregate to text item 1 of vFeature
-'                set vFeature to text item 2 of vFeature
-'            End If
-'            exit repeat
-'        End If
-'    end repeat
-'
-'    -- look for scenarios
-'    repeat with vParagraph in (get items (vLineNumber + 1) thru (length of vData) of vData)
-'        -- look for a status tag above the scenario name
-'        set AppleScript's text item delimiters to cStatusTag
-'        if (count text items of text of vParagraph) > 1 then
-'            set vTagScenarioStatus to first word of text item 2 of text of vParagraph
-'        End If
-'        -- look for the scenarios
-'        set AppleScript's text item delimiters to ": "
-'        if (count words of text of vParagraph) > 0 and first word of vParagraph = "Scenario" then
-'            set vScenarioName to text item 2 of vParagraph
-'        End If
-'        If vScenarioName Is Not Null Then
-'            set end of vScenarios to {name:vScenarioName, tags:{status:vTagScenarioStatus}}
-'            set vScenarioName to null
-'            set vTagScenarioStatus to null
-'        End If
-'    end repeat
+    Loop
+    Stop
+    
+    'look for scenarios
+    While lngLineNumber <= UBound(varFileText)
+        Set colScenarioTags = New Collection
+        If InStr(strParagraph, "Scenario:") Then
+            
+    '        If vScenarioName Is Not Null Then
+    '            set end of vScenarios to {name:vScenarioName, tags:{status:vTagScenarioStatus}}
+    '            set vScenarioName to null
+    '            set vTagScenarioStatus to null
+    '        End If
+        
+        Else
+            findTags colScenarioTags, strParagraph
+        
+        End If
+        
 '
 '    set vProcessedData to {domain:vDomain, aggregate:vAggregate, feature:vFeature, scenarios:vScenarios, tags:{status:vTagFeatureStatus}}
 '    set AppleScript's text item delimiters to vOldDelimiters
 '    --return list of records from text file
 '    return vProcessedData
-    
-    Wend
+
+Wend
     
     Exit Function
     
 error_handler:
     basSystem.log_error "basFeatureReader.readDataFromFeatureFile"
 End Function
-
+'-------------------------------------------------------------
+' Description   : extract any tag from a string and add them to a given collection
+' Parameter     : pcolFeatureTags   - where to save tags
+'                 pstrParagraph     - a line from a feature file
+' Returnvalue   :
+'-------------------------------------------------------------
+Private Sub findTags(pcolFeatureTags As Collection, pstrParagraph As String)
+    
+    Dim varPieces As Variant
+    Dim lngPieceIndex As Long
+    Dim varTag As Variant
+    Dim strTag As String
+    Dim strTagKey As String
+    Dim strTagValue As String
+        
+    On Error GoTo error_handler
+    If Trim(pstrParagraph) <> "" Then
+        varPieces = Split(pstrParagraph, " ")
+        For lngPieceIndex = 0 To UBound(varPieces)
+            'tags are marked with an @ sign
+            If Left(varPieces(lngPieceIndex), 1) = "@" Then
+                strTag = Right(varPieces(lngPieceIndex), Len(varPieces(lngPieceIndex)) - 1)
+                'key-value tags are separated by a - sign
+                varTag = Split(strTag, "-")
+                If UBound(varTag) = 0 Then
+                    'it's a single tag
+                    strTagKey = strTag
+                    strTagValue = strTag
+                Else
+                    strTagKey = varTag(0)
+                    strTagValue = Right(strTag, Len(strTag) - Len(strTagKey) - 1)
+                End If
+            On Error GoTo found_duplicate_tag
+            pcolFeatureTags.Add strTagValue, strTagKey
+            On Error GoTo error_handler
+            End If
+        Next
+    End If
+    Exit Sub
+    
+found_duplicate_tag:
+    basSystem.log "found duplicate value for tag " & strTagKey, cLogWarning
+    Resume Next
+error_handler:
+    basSystem.log_error "basFeatureReader.findTags"
+End Sub
