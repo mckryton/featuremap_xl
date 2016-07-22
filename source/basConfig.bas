@@ -23,3 +23,6 @@ Option Explicit
 'if true, script assumes feature names contain aggregates
 ' expected format is using this scheme <aggregate name> - <feature name>
 Global Const cblnGetAggregatesFromFeatureName = True
+
+'reserved tag names
+Global Const cstrDomainTag = "d"    'domain tag example for a car domain: @d-car

@@ -30,7 +30,7 @@ Option Explicit
 '-------------------------------------------------------------
 Public Function getFeatureFilesDir() As String
 
-    Dim strFeatureDir As Variant
+    Dim strFeatureNameDir As Variant
     Dim AppleScript As String
     
     #If Mac Then
@@ -43,7 +43,7 @@ Public Function getFeatureFilesDir() As String
     #If Mac Then
         'TODO: fix known bug -> umlauts like Š get converted by vba into a_
         AppleScript = "(choose folder with prompt ""choose feature folder"" default location (path to the desktop folder from user domain)) as string"
-        strFeatureDir = MacScript(AppleScript)
+        strFeatureNameDir = MacScript(AppleScript)
     #Else
         Set dlgChooseFolder = Application.FileDialog(msoFileDialogFolderPicker)
         With dlgChooseFolder
@@ -51,13 +51,13 @@ Public Function getFeatureFilesDir() As String
             .AllowMultiSelect = False
             '.InitialFileName = strPath
             If .Show <> False Then
-                strFeatureDir = .SelectedItems(1) & "\"
+                strFeatureNameDir = .SelectedItems(1) & "\"
             End If
         End With
         Set dlgChooseFolder = Nothing
     #End If
-    basSystem.log ("feature dir is set to " & strFeatureDir)
-    getFeatureFilesDir = strFeatureDir
+    basSystem.log ("feature dir is set to " & strFeatureNameDir)
+    getFeatureFilesDir = strFeatureNameDir
     Exit Function
     
 error_handler:
@@ -67,10 +67,10 @@ End Function
 '-------------------------------------------------------------
 ' Description   : find and open all feature files and create a
 '                   domain model from extracted data
-' Parameter     : pstrFeatureDir    - directory containing all feature files
+' Parameter     : pstrFeatureNameDir    - directory containing all feature files
 ' Returnvalue   : domain model as collection
 '-------------------------------------------------------------
-Public Function setupDataModel(pstrFeatureDir As String) As Collection
+Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
 
     Dim colDomainModel As New Collection
     Dim lngFeatureId As Long
@@ -82,7 +82,7 @@ Public Function setupDataModel(pstrFeatureDir As String) As Collection
     
     On Error GoTo error_handler
     lngFeatureId = 1
-    arrFeatureFileNames = getFeatureFileNames(pstrFeatureDir)
+    arrFeatureFileNames = getFeatureFileNames(pstrFeatureNameDir)
     For lngFeatureFileIndex = 0 To UBound(arrFeatureFileNames)
         'extract feature id from file name (assuming that the file is named <feature id>-<feature name>.feature)
         arrFileName = Split(arrFeatureFileNames(lngFeatureFileIndex), "-")
@@ -92,7 +92,7 @@ Public Function setupDataModel(pstrFeatureDir As String) As Collection
             lngFeatureFileId = -1
         End If
         Application.StatusBar = "read feature file " & arrFeatureFileNames(lngFeatureFileIndex)
-        Set colFeature = readDataFromFeatureFile(pstrFeatureDir & arrFeatureFileNames(lngFeatureFileIndex))
+        Set colFeature = readFeatureFile(pstrFeatureNameDir & arrFeatureFileNames(lngFeatureFileIndex))
         
 '        set vDomainName to domain of vFeature
 '        set vAggregateName to aggregate of vFeature
@@ -119,10 +119,10 @@ error_handler:
 End Function
 '-------------------------------------------------------------
 ' Description   : find all feature files
-' Parameter     : pstrFeatureDir    - directory containing all feature files
+' Parameter     : pstrFeatureNameDir    - directory containing all feature files
 ' Returnvalue   : list of feature file names as array
 '-------------------------------------------------------------
-Private Function getFeatureFileNames(pstrFeatureDir As String) As Variant
+Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
 
     Dim colFeatureFileNames As Collection
     'Applescript code for Mac version
@@ -133,7 +133,7 @@ Private Function getFeatureFileNames(pstrFeatureDir As String) As Variant
     #If Mac Then
         strScript = "set vFeatureFileNames to {}" & vbLf & _
                     "tell application ""Finder""" & vbLf & _
-                        "set vFeaturesFolder to """ & pstrFeatureDir & """ as alias" & vbLf & _
+                        "set vFeaturesFolder to """ & pstrFeatureNameDir & """ as alias" & vbLf & _
                         "set vFeatureFiles to (get files of vFeaturesFolder whose name ends with "".feature"")" & vbLf & _
                         "repeat with vFeatureFile in vFeatureFiles" & vbLf & _
                                 "set end of vFeatureFileNames to get name of vFeatureFile" & vbLf & _
@@ -155,16 +155,18 @@ error_handler:
 End Function
 '-------------------------------------------------------------
 ' Description   : read data from a feature file
-' Parameter     : pstrFeatureFile    - full filename of the feature file
+' Parameter     : pstrFeatureNameFile    - full filename of the feature file
 ' Returnvalue   : collection containing the feature file data
 '-------------------------------------------------------------
-Private Function readDataFromFeatureFile(ByVal pstrFeatureFile As String) As Collection
+Private Function readFeatureFile(ByVal pstrFeatureNameFile As String) As Collection
 
-    Dim strDomain As String
-    Dim strAggregate As String
-    Dim strFeature As String
-    Dim varFeature As Variant            'split feature name into an array if it contains the aggregate
+    Dim strDomainName As String
+    Dim strAggregateName As String
+    Dim strFeatureName As String
+    Dim varFeatureNameParts As Variant            'split feature name into an array if it contains the aggregate
+    Dim colFeature As New Collection
     Dim colScenarios As New Collection
+    Dim colScenario As Collection
     Dim strScenarioName As String
     Dim lngLineNumber As Long
     Dim strScript As String
@@ -174,68 +176,76 @@ Private Function readDataFromFeatureFile(ByVal pstrFeatureFile As String) As Col
     Dim colScenarioTags As Collection
     
     On Error GoTo error_handler
-    strDomain = "undefined"
+    strDomainName = "undefined"
     lngLineNumber = 0
+    strFeatureName = "undefined"
+    strAggregateName = "undefined"
     
-    basSystem.log "read data from feature file " & pstrFeatureFile
+    basSystem.log "read data from feature file " & pstrFeatureNameFile
     'read lines of the feature file into an array
     #If Mac Then
         strScript = "set AppleScript's text item delimiters to ""#@#@""" & vbLf & _
-                    "return (paragraphs of (read (""" & pstrFeatureFile & """ as alias) as Çclass utf8È)) as string"
+                    "return (paragraphs of (read (""" & pstrFeatureNameFile & """ as alias) as Çclass utf8È)) as string"
         varFileText = Split(MacScript(strScript), "#@#@")
     #Else
         'TODO add windows support
     #End If
-    'read all the lines above Feature:
+    'read all the lines above "Feature:"
     Do While lngLineNumber <= UBound(varFileText)
         strParagraph = varFileText(lngLineNumber)
-        'found feature?
+        'found the feature name?
         If InStr(LCase(strParagraph), "feature:") > 0 Then
-            strFeature = Right(strParagraph, Len(strParagraph) - InStr(LCase(strParagraph), "feature:") - 8)
+            strFeatureName = Right(strParagraph, Len(strParagraph) - InStr(LCase(strParagraph), "feature:") - 8)
             If cblnGetAggregatesFromFeatureName Then
-                varFeature = Split(strFeature, " - ")
-                If UBound(varFeature) > 0 Then
-                    strAggregate = varFeature(0)
-                    strFeature = Right(strFeature, Len(strFeature) - Len(strAggregate) - 3)
-                Else
-                    strAggregate = "undefined"
+                varFeatureNameParts = Split(strFeatureName, " - ")
+                If UBound(varFeatureNameParts) > 0 Then
+                    strAggregateName = varFeatureNameParts(0)
+                    strFeatureName = Right(strFeatureName, Len(strFeatureName) - Len(strAggregateName) - 3)
                 End If
+                basSystem.log "found feature >" & strFeatureName & "< for aggregate >" & strAggregateName & "<"
+            Else
+            basSystem.log "found feature " & strFeatureName
             End If
             Exit Do
         End If
         findTags colFeatureTags, strParagraph
         lngLineNumber = lngLineNumber + 1
     Loop
-    Stop
+    colFeature.Add strFeatureName, "name"
+    colFeature.Add colFeatureTags, "tags"
     
     'look for scenarios
+    Set colScenario = New Collection
+    Set colScenarioTags = New Collection
     While lngLineNumber <= UBound(varFileText)
-        Set colScenarioTags = New Collection
-        If InStr(strParagraph, "Scenario:") Then
-            
-    '        If vScenarioName Is Not Null Then
-    '            set end of vScenarios to {name:vScenarioName, tags:{status:vTagScenarioStatus}}
-    '            set vScenarioName to null
-    '            set vTagScenarioStatus to null
-    '        End If
-        
+        strParagraph = varFileText(lngLineNumber)
+        'found a scenario name?
+        If InStr(LCase(strParagraph), "scenario:") > 0 Then
+            strScenarioName = Right(strParagraph, Len(strParagraph) - InStr(LCase(strParagraph), "scenario:") - 9)
+            colScenario.Add strScenarioName, "name"
+            colScenario.Add colScenarioTags, "tags"
+            colScenarios.Add colScenario, strScenarioName
+            'get ready for the next scenario
+            Set colScenario = New Collection
+            Set colScenarioTags = New Collection
         Else
             findTags colScenarioTags, strParagraph
-        
         End If
-        
-'
-'    set vProcessedData to {domain:vDomain, aggregate:vAggregate, feature:vFeature, scenarios:vScenarios, tags:{status:vTagFeatureStatus}}
-'    set AppleScript's text item delimiters to vOldDelimiters
-'    --return list of records from text file
-'    return vProcessedData
-
-Wend
-    
+        lngLineNumber = lngLineNumber + 1
+    Wend
+    colFeature.Add colScenarios, "scenarios"
+    'receive domain from feature tags
+    On Error Resume Next
+    strDomainName = colFeatureTags(cstrDomainTag)
+    On Error GoTo error_handler
+    colFeature.Add strDomainName, "domain"
+    colFeature.Add strAggregateName, "aggregate"
+    'return feature collection as result
+    Set readFeatureFile = colFeature
     Exit Function
     
 error_handler:
-    basSystem.log_error "basFeatureReader.readDataFromFeatureFile"
+    basSystem.log_error "basFeatureReader.readFeatureFile"
 End Function
 '-------------------------------------------------------------
 ' Description   : extract any tag from a string and add them to a given collection
