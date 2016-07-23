@@ -73,6 +73,8 @@ End Function
 Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
 
     Dim colDomainModel As New Collection
+    Dim colDomain As Collection
+    Dim colAggregate As Collection
     Dim lngFeatureId As Long
     Dim arrFeatureFileNames As Variant
     Dim lngFeatureFileIndex As Long
@@ -93,27 +95,27 @@ Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
         End If
         Application.StatusBar = "read feature file " & arrFeatureFileNames(lngFeatureFileIndex)
         Set colFeature = readFeatureFile(pstrFeatureNameDir & arrFeatureFileNames(lngFeatureFileIndex))
-        
-'        set vDomainName to domain of vFeature
-'        set vAggregateName to aggregate of vFeature
-'        -- have to use counters because referencing into the strucure of vDomainmodel seems not to be possible
-'        set vDomainCount to 0
-'        set vAggregateCount to 0
-'        -- domains of vDomainModel is a list of records where each record defines a domain
-'        -- now try to figure out out if a record for the given domain already exists
-'        set vIsNewItem to true
-
-    
-    
-    
-    
-    
-    
-    
+        On Error GoTo create_new_domain
+        Set colDomain = colDomainModel(colFeature("domain"))
+        On Error GoTo error_handler
+        On Error GoTo create_new_aggregate
+        Set colAggregate = colDomain(colFeature("aggregate"))
+        On Error GoTo error_handler
+        colAggregate.Add colFeature, colFeature("name")
+        basSystem.log "feature " & colFeature("name") & " added to the model"
     Next
-    
+    Set setupDataModel = colDomainModel
     Exit Function
-    
+create_new_domain:
+    Set colDomain = New Collection
+    colDomainModel.Add colDomain, colFeature("domain")
+    basSystem.log "domain " & colFeature("domain") & " added to the model"
+    Resume Next
+create_new_aggregate:
+    Set colAggregate = New Collection
+    colDomain.Add colAggregate, colFeature("aggregate")
+    basSystem.log "aggregate " & colFeature("aggregate") & " added to the model"
+    Resume Next
 error_handler:
     basSystem.log_error "basFeatureReader.setupDataModel"
 End Function
@@ -141,7 +143,7 @@ Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
                     "end tell" & vbLf & _
                     "return vFeatureFileNames"
         varFeatureFiles = MacScript(strScript)
-        varFeatureFiles = Split(varFeatureFiles, ",")
+        varFeatureFiles = Split(varFeatureFiles, ", ")
     #Else
     
     #End If
