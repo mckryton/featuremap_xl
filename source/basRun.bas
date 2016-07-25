@@ -42,11 +42,10 @@ Public Sub runFeatureMap()
     strFeatureDir = basFeatureReader.getFeatureFilesDir()
     
     'extract features and scenarios from feature files
-'    set vDomainModel to my setupDataModel(vFeaturesFolder)
     Set colDomainModel = basFeatureReader.setupDataModel(strFeatureDir)
     
-'    --create an empty drawing document from OmniGraffle
-'    set vDrawingDoc to my createDrawingDoc()
+    'create a new workbook as empty drawing document
+    Set wbkFeatureMap = createDrawingDoc()
     
 '    --draw domain boxes with all aggregates, features and scenarios
 '    my assembleModel(vDrawingDoc, vDomainModel)

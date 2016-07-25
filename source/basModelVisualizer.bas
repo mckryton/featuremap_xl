@@ -23,3 +23,33 @@ Attribute VB_Name = "basModelVisualizer"
 
 'Options
 Option Explicit
+'-------------------------------------------------------------
+' Description   : create a new empty workbook for drawing
+' Parameter     :
+' Returnvalue   : xl workbook
+'-------------------------------------------------------------
+Public Function createDrawingDoc() As Workbook
+
+    Dim wbkDrawing As Workbook
+    Dim wshDrawing As Worksheet
+
+    On Error GoTo error_handler
+    basSystem.log "create a new workbook for drawing"
+    Set wbkDrawing = Application.Workbooks.Add
+    Application.DisplayAlerts = False
+    'remove unnecessary sheets
+    While wbkDrawing.Worksheets.Count > 1
+        wbkDrawing.Worksheets(1).Delete
+    Wend
+    'hide gridlines
+    Set wshDrawing = wbkDrawing.Worksheets(1)
+    wshDrawing.Name = "domain model"
+    wbkDrawing.Windows(1).DisplayGridlines = False
+    
+    Application.DisplayAlerts = True
+    Set createDrawingDoc = wbkDrawing
+    Exit Function
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.createDrawingDoc"
+End Function

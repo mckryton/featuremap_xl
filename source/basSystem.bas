@@ -111,10 +111,11 @@ Public Sub log_error(pstrFunctionName As String, Optional pstrLogMsg As Variant)
         strLog = strLog & " " & strError
     End If
     Debug.Print strLog
-    'reset cursor, screen update status and statusbar
+    'reset cursor, screen update status, statusbar, alert dialogs
     Application.StatusBar = False
     Application.ScreenUpdating = True
     Application.Cursor = xlDefault
+    Application.DisplayAlerts = True
 End Sub
 '-------------------------------------------------------------
 ' Description   : alias to log function with cLogDebug level
