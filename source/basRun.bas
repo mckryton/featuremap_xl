@@ -35,7 +35,7 @@ Public Sub runFeatureMap()
     'local vDomainModel
     Dim colDomainModel As Collection
     'local vDrawingDoc
-    Dim wbkFeatureMap As Workbook
+    Dim wshDrawing As Worksheet
     
     On Error GoTo error_handler
     'select a folder containing feature descriptions, text files with a .feature extension
@@ -45,10 +45,10 @@ Public Sub runFeatureMap()
     Set colDomainModel = basFeatureReader.setupDataModel(strFeatureDir)
     
     'create a new workbook as empty drawing document
-    Set wbkFeatureMap = createDrawingDoc()
+    Set wshDrawing = createDrawingDoc()
     
-'    --draw domain boxes with all aggregates, features and scenarios
-'    my assembleModel(vDrawingDoc, vDomainModel)
+    'draw domain boxes with all aggregates, features and scenarios
+    basModelVisualizer.visualizeModel wshDrawing, colDomainModel, cblnHideAggregatesDefault
     
 '    --connect each with it's parent
 '    my connectItems(vDrawingDoc)

@@ -108,11 +108,13 @@ Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
     Exit Function
 create_new_domain:
     Set colDomain = New Collection
+    colDomain.Add colFeature("domain"), "name"
     colDomainModel.Add colDomain, colFeature("domain")
     basSystem.log "domain " & colFeature("domain") & " added to the model"
     Resume Next
 create_new_aggregate:
     Set colAggregate = New Collection
+    colAggregate.Add colFeature("aggregate"), "name"
     colDomain.Add colAggregate, colFeature("aggregate")
     basSystem.log "aggregate " & colFeature("aggregate") & " added to the model"
     Resume Next

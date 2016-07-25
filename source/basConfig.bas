@@ -24,5 +24,21 @@ Option Explicit
 ' expected format is using this scheme <aggregate name> - <feature name>
 Global Const cblnGetAggregatesFromFeatureName = True
 
+'if true aggregates are hidden from the drawing unless user decides otherwise
+'TODO: show configuration dialog after macro is started
+Global Const cblnHideAggregatesDefault = False
+
 'reserved tag names
 Global Const cstrDomainTag = "d"    'domain tag example for a car domain: @d-car
+
+'distance between drawing and document border
+Global Const clngDocPaddingX = 50
+Global Const clngDocPaddingY = 50
+'distance between cDocPaddingX and domain box (e.g. to place user icons)
+Global Const clngDomainPaddingX = 50
+'white space around any item (e.g. feature, scenario or aggregate)
+Global Const clngItemPaddingX = 20
+Global Const clngItemPaddingY = 20
+'item size
+Global Const clngItemWidth = 140
+Global Const clngItemHeight = 55
