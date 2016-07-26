@@ -30,7 +30,10 @@ Option Explicit
 '-------------------------------------------------------------
 Public Function getFeatureFilesDir() As String
 
-    Dim strFeatureNameDir As Variant
+    Dim strFeatureDirInfo As Variant
+    Dim strFeatureDirDisk As String
+    Dim strFeatureDirPath As String
+    Dim strFeatureDirFullPath As String
     Dim strAppleScript As String
     
     #If Mac Then
@@ -43,11 +46,17 @@ Public Function getFeatureFilesDir() As String
     #If Mac Then
         'TODO: fix known bug -> umlauts like Š get converted by vba into a_
         strAppleScript = "try" & vbLf & _
-                            "return (choose folder with prompt ""choose feature folder"" default location (path to the desktop folder from user domain)) as string" & vbLf & _
-                        "on error" & vbLf & _
-                            "return """"" & vbLf & _
-                        "end try"
-        strFeatureNameDir = MacScript(strAppleScript)
+                                "tell application ""Finder""" & vbLf & _
+                                    "set vPath to (choose folder with prompt ""choose feature folder"" default location (path to the desktop folder from user domain))" & vbLf & _
+                                    "return {url of vPath, displayed name of disk of vPath}" & vbLf & _
+                                "end tell" & vbLf & _
+                            "on error" & vbLf & _
+                                "return """"" & vbLf & _
+                            "end try"
+        strFeatureDirInfo = Split(MacScript(strAppleScript), ", ")
+        strFeatureDirPath = basSystem.decomposeUrlPath(strFeatureDirInfo(0))
+        strFeatureDirDisk = strFeatureDirInfo(1)
+        strFeatureDirFullPath = strFeatureDirDisk & strFeatureDirPath
     #Else
         'TODO: catch cancel dialog
         Set dlgChooseFolder = Application.FileDialog(msoFileDialogFolderPicker)
@@ -56,13 +65,13 @@ Public Function getFeatureFilesDir() As String
             .AllowMultiSelect = False
             '.InitialFileName = strPath
             If .Show <> False Then
-                strFeatureNameDir = .SelectedItems(1) & "\"
+                strFeatureDirFullPath = .SelectedItems(1) & "\"
             End If
         End With
         Set dlgChooseFolder = Nothing
     #End If
-    basSystem.log ("feature dir is set to " & strFeatureNameDir)
-    getFeatureFilesDir = strFeatureNameDir
+    basSystem.log ("feature dir is set to " & strFeatureDirFullPath)
+    getFeatureFilesDir = strFeatureDirFullPath
     Exit Function
     
 error_handler:
@@ -144,20 +153,28 @@ Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
     'Applescript code for Mac version
     Dim strScript As String
     Dim varFeatureFiles As Variant
+    Dim varFeatureFilePath As Variant
+    Dim lngFeatureFileIndex As Long
     
     On Error GoTo error_handler
+    Application.StatusBar = "retrieve feature file names"
     #If Mac Then
         strScript = "set vFeatureFileNames to {}" & vbLf & _
                     "tell application ""Finder""" & vbLf & _
                         "set vFeaturesFolder to """ & pstrFeatureNameDir & """ as alias" & vbLf & _
                         "set vFeatureFiles to (get files of vFeaturesFolder whose name ends with "".feature"")" & vbLf & _
                         "repeat with vFeatureFile in vFeatureFiles" & vbLf & _
-                                "set end of vFeatureFileNames to get name of vFeatureFile" & vbLf & _
+                                "set end of vFeatureFileNames to get URL of vFeatureFile" & vbLf & _
                         "end repeat" & vbLf & _
                     "end tell" & vbLf & _
                     "return vFeatureFileNames"
         varFeatureFiles = MacScript(strScript)
         varFeatureFiles = Split(varFeatureFiles, ", ")
+        For lngFeatureFileIndex = 0 To UBound(varFeatureFiles)
+            varFeatureFilePath = Split(varFeatureFiles(lngFeatureFileIndex), "/")
+            varFeatureFiles(lngFeatureFileIndex) = basSystem.decomposeUrlPath("file://" & _
+                                                        varFeatureFilePath(UBound(varFeatureFilePath)))
+        Next
     #Else
     
     #End If

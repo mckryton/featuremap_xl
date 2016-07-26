@@ -59,9 +59,10 @@ End Function
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
 '                 pcolDomainModel       - domain model as structured collection
 '                 pblnHideAggregates    - if true aggregates are hidden from the drawing
-' Returnvalue   :
+' Returnvalue   : a collection containing all corresponding connection items (e.g. feature and scenario)
 '-------------------------------------------------------------
-Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collection, pblnHideAggregates As Boolean)
+Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collection, _
+                                pblnHideAggregates As Boolean) As Collection
 
     Dim lngDomainCount As Long
     'the current drawing side of a domain box
@@ -77,6 +78,9 @@ Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collectio
     Dim lngScenarioCountRight As Long
     Dim lngMaxScenarioCount As Long
     Dim lngAggregateScenarioCount As Long
+    Dim colConnectionTargetScenarios As Collection
+    Dim colConnectionTargetFeatures As Collection
+    Dim strShapeName As String
     
     On Error GoTo error_handler
     lngDomainCount = 0
@@ -97,6 +101,7 @@ Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collectio
         For Each colAggregate In colDomain("aggregates")
             'start counting how many scenarios are assigned to the current aggregate
             lngAggregateScenarioCount = 0
+            Set colConnectionTargetFeatures = New Collection
             For Each colFeature In colAggregate("features")
                 'set scenario counter depending on the current drawing side
                 If blnDrawOnLeftSide = True Then
@@ -104,11 +109,13 @@ Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collectio
                 Else
                     lngScenarioCount = lngScenarioCountRight
                 End If
+                Set colConnectionTargetScenarios = New Collection
                 For Each colScenario In colFeature("scenarios")
                     lngScenarioCount = lngScenarioCount + 1
-                    drawScenario pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
+                    strShapeName = drawScenario(pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
                         colDomain("name"), colFeature("id"), colFeature("fileId"), colFeature("name"), _
-                        lngScenarioCount, colScenario
+                        lngScenarioCount, colScenario)
+                    colConnectionTargetScenarios.Add strShapeName
                 Next
                 'if an features has no scenarios it requires the space of one
                 If colFeature("scenarios").Count = 0 Then
@@ -116,9 +123,12 @@ Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collectio
                     lngAggregateScenarioCount = lngAggregateScenarioCount + 1
                 End If
                 lngAggregateScenarioCount = lngAggregateScenarioCount + colFeature("scenarios").Count
-                drawFeature pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
+                strShapeName = drawFeature(pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
                         colDomain("name"), colAggregate("name"), colFeature("id"), colFeature("fileId"), _
-                        colFeature("name"), colFeature("scenarios").Count, lngScenarioCount
+                        colFeature("name"), colFeature("scenarios").Count, lngScenarioCount)
+                colConnectionTargetFeatures.Add strShapeName
+                drawConnections pwshDrawing, strShapeName, colConnectionTargetScenarios
+                Set colConnectionTargetScenarios = Nothing
                 'count how many scenarios are on each side of the domain box to be able to calculate the size of the domain box
                 If blnDrawOnLeftSide = True Then
                     lngScenarioCountLeft = lngScenarioCount
@@ -131,8 +141,10 @@ Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collectio
                 End If
             Next
             If pblnHideAggregates = False Then
-                drawAggregate pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
-                            colDomain("name"), colAggregate("name"), lngScenarioCount, lngAggregateScenarioCount
+                strShapeName = drawAggregate(pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
+                            colDomain("name"), colAggregate("name"), lngScenarioCount, lngAggregateScenarioCount)
+                drawConnections pwshDrawing, strShapeName, colConnectionTargetFeatures
+                Set colConnectionTargetFeatures = Nothing
             End If
             'flip drawing side after each aggregate
             If pblnHideAggregates = False Then
@@ -145,15 +157,14 @@ Public Sub visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collectio
             lngMaxScenarioCount = lngScenarioCountRight
         End If
         drawDomain pwshDrawing, lngDomainCount, lngMaxScenarioCount, intTypeCount, colDomain("name")
-'        my drawDomain(pDrawingDoc, vDomainCount, vMaxScenarioCount, vTypeCount, domainname of vDomain)
         lngDomainCount = lngDomainCount + 1
     Next
 
-    Exit Sub
+    Exit Function
     
 error_handler:
     basSystem.log_error "basModelVisualizer.visualizeModel"
-End Sub
+End Function
 '-------------------------------------------------------------
 ' Description   : draw domains as surrounding boxes
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
@@ -225,11 +236,11 @@ End Sub
 '                 pstrAggregateName
 '                 plngScenarioCount
 '                 plngCurrentAggregateScenarioCount
-' Returnvalue   :
+' Returnvalue   : shape name as string
 '-------------------------------------------------------------
-Private Sub drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
+Private Function drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
                         pintTypeCount As Integer, ByVal pstrDomainName As String, pstrAggregateName As String, _
-                        plngScenarioCount As Long, plngCurrentAggregateScenarioCount As Long)
+                        plngScenarioCount As Long, plngCurrentAggregateScenarioCount As Long) As String
     
     Dim lngDomainOffsetX As Long
     Dim lngOriginX As Long
@@ -302,11 +313,12 @@ Private Sub drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByV
         .Fill.Solid
     End With
     shpAggregate.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
-    Exit Sub
+    drawAggregate = shpAggregate.Name
+    Exit Function
     
 error_handler:
     basSystem.log_error "basModelVisualizer.drawAggregate"
-End Sub
+End Function
 '-------------------------------------------------------------
 ' Description   : draw features as use cases
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
@@ -319,12 +331,12 @@ End Sub
 '                 plngFeatureFileId
 '                 pstrFeatureName
 '                 plngScenarioCount
-' Returnvalue   :
+' Returnvalue   : shape name as string
 '-------------------------------------------------------------
-Private Sub drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
+Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
                         pintTypeCount As Integer, ByVal pstrDomainName As String, pstrAggregateName As String, _
                         plngFeatureId As Long, plngFeatureFileId As Long, pstrFeatureName As String, _
-                        plngCurrentFeatureScenarioCount As Long, plngAllScenarioCount As Long)
+                        plngCurrentFeatureScenarioCount As Long, plngAllScenarioCount As Long) As String
     
     Dim lngDomainOffsetX As Long
     Dim lngOriginX As Long
@@ -405,11 +417,12 @@ Private Sub drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal
         .Fill.Solid
     End With
     shpFeature.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
-    Exit Sub
+    drawFeature = shpFeature.Name
+    Exit Function
     
 error_handler:
     basSystem.log_error "basModelVisualizer.drawFeature"
-End Sub
+End Function
 '-------------------------------------------------------------
 ' Description   : draw scenarios as use cases
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
@@ -422,12 +435,12 @@ End Sub
 '                 pstrFeatureName
 '                 plngScenarioCount
 '                 pcolScenario
-' Returnvalue   :
+' Returnvalue   : shape name as string
 '-------------------------------------------------------------
-Private Sub drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
+Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
                         pintTypeCount As Integer, ByVal pstrDomainName As String, plngFeatureId As Long, _
                         plngFeatureFileId As Long, pstrFeatureName As String, plngScenarioCount As Long, _
-                        pcolScenario As Collection)
+                        pcolScenario As Collection) As String
     
     Dim lngDomainOffsetX As Long
     Dim lngOriginX As Long
@@ -492,11 +505,12 @@ Private Sub drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVa
         .Fill.Solid
     End With
     shpScenario.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
-    Exit Sub
+    drawScenario = shpScenario.Name
+    Exit Function
     
 error_handler:
     basSystem.log_error "basModelVisualizer.drawScenario"
-End Sub
+End Function
 '-------------------------------------------------------------
 ' Description   : set height of all domain boxes to the same size
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
@@ -528,4 +542,37 @@ Public Sub levelDomainHeight(pwshDrawing As Worksheet)
     
 error_handler:
     basSystem.log_error "basModelVisualizer.levelDomainHeight"
+End Sub
+'-------------------------------------------------------------
+' Description   : connect feature map items with each other (eg. feature with scenario)
+' Parameter     : pwshDrawing           - xl worksheet to draw on
+'                 pstrSourceShape       - name of the source shape
+'                 pcolTargetShapes      - collection containing the target shape names
+' Returnvalue   :
+'-------------------------------------------------------------
+Public Sub drawConnections(pwshDrawing As Worksheet, pstrSourceShapeName As String, pcolTargetShapes As Collection)
+
+    Dim strShapeTargetName As Variant
+    Dim shpConnector As Shape
+
+    On Error GoTo error_handler
+    For Each strShapeTargetName In pcolTargetShapes
+        Set shpConnector = pwshDrawing.Shapes.AddConnector(msoConnectorCurve, 0, 0, 50, 50)
+        With shpConnector.Line
+            .ForeColor.RGB = RGB(0, 0, 0)
+            .DashStyle = msoLineDash
+            .EndArrowheadStyle = msoArrowheadTriangle
+            .EndArrowheadLength = msoArrowheadLong
+        End With
+        With shpConnector.ConnectorFormat
+            .BeginConnect pwshDrawing.Shapes(pstrSourceShapeName), 1
+            .EndConnect pwshDrawing.Shapes(strShapeTargetName), 1
+        End With
+        shpConnector.RerouteConnections
+    
+    Next
+    Exit Sub
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.drawConnections"
 End Sub

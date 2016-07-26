@@ -43,6 +43,35 @@ NOT_FOUND:
     existsItem = False
 End Function
 '-------------------------------------------------------------
+' Description   : translates an encoded Url into an Mac Path
+' Parameter     : pstrEncodedUrl
+' Returnvalue   : decoded Url as string
+'-------------------------------------------------------------
+Public Function decomposeUrlPath(pstrEncodedUrl) As String
+                    
+    Dim strDecodedUrl As String
+                     
+    On Error GoTo error_handler
+    strDecodedUrl = Replace(pstrEncodedUrl, "a%CC%88", "Š")
+    strDecodedUrl = Replace(strDecodedUrl, "o%CC%88", "š")
+    strDecodedUrl = Replace(strDecodedUrl, "u%CC%88", "Ÿ")
+    strDecodedUrl = Replace(strDecodedUrl, "A%CC%88", "€")
+    strDecodedUrl = Replace(strDecodedUrl, "O%CC%88", "…")
+    strDecodedUrl = Replace(strDecodedUrl, "U%CC%88", "†")
+    strDecodedUrl = Replace(strDecodedUrl, "%C3%9F", "§")
+    strDecodedUrl = Replace(strDecodedUrl, "%20", " ")
+    strDecodedUrl = Replace(strDecodedUrl, "%23", "#")
+    strDecodedUrl = Replace(strDecodedUrl, "%3C", "<")
+    strDecodedUrl = Replace(strDecodedUrl, "%3E", ">")
+    strDecodedUrl = Right(strDecodedUrl, Len(strDecodedUrl) - Len("file://"))
+    strDecodedUrl = Replace(strDecodedUrl, "/", ":")
+    decomposeUrlPath = strDecodedUrl
+    Exit Function
+                     
+error_handler:
+    basSystem.log_error "basSystem.decodeUrl"
+End Function
+'-------------------------------------------------------------
 ' Description   : prints log messages to direct window
 ' Parameter     :   pstrLogMsg      - log message
 '                   pintLogLevel    - log level for this message
