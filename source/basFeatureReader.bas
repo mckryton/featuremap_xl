@@ -74,7 +74,9 @@ Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
 
     Dim colDomainModel As New Collection
     Dim colDomain As Collection
+    Dim colDomains As Collection
     Dim colAggregate As Collection
+    Dim colAggregates As Collection
     Dim lngFeatureId As Long
     Dim arrFeatureFileNames As Variant
     Dim lngFeatureFileIndex As Long
@@ -83,6 +85,7 @@ Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
     Dim colFeature As Collection
     
     On Error GoTo error_handler
+    colDomainModel.Add New Collection, "domains"
     lngFeatureId = 1
     arrFeatureFileNames = getFeatureFileNames(pstrFeatureNameDir)
     For lngFeatureFileIndex = 0 To UBound(arrFeatureFileNames)
@@ -96,12 +99,14 @@ Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
         Application.StatusBar = "read feature file " & arrFeatureFileNames(lngFeatureFileIndex)
         Set colFeature = readFeatureFile(pstrFeatureNameDir & arrFeatureFileNames(lngFeatureFileIndex))
         On Error GoTo create_new_domain
-        Set colDomain = colDomainModel(colFeature("domain"))
+        Set colDomain = colDomainModel("domains")(colFeature("domain"))
         On Error GoTo error_handler
         On Error GoTo create_new_aggregate
-        Set colAggregate = colDomain(colFeature("aggregate"))
+        Set colAggregate = colDomain("aggregates")(colFeature("aggregate"))
         On Error GoTo error_handler
-        colAggregate.Add colFeature, colFeature("name")
+        colFeature.Add lngFeatureId, "id"
+        colFeature.Add lngFeatureId, "fileId"
+        colAggregate("features").Add colFeature, colFeature("name")
         basSystem.log "feature " & colFeature("name") & " added to the model"
     Next
     Set setupDataModel = colDomainModel
@@ -109,13 +114,15 @@ Public Function setupDataModel(pstrFeatureNameDir As String) As Collection
 create_new_domain:
     Set colDomain = New Collection
     colDomain.Add colFeature("domain"), "name"
-    colDomainModel.Add colDomain, colFeature("domain")
+    colDomain.Add New Collection, "aggregates"
+    colDomainModel("domains").Add colDomain, colFeature("domain")
     basSystem.log "domain " & colFeature("domain") & " added to the model"
     Resume Next
 create_new_aggregate:
     Set colAggregate = New Collection
     colAggregate.Add colFeature("aggregate"), "name"
-    colDomain.Add colAggregate, colFeature("aggregate")
+    colAggregate.Add New Collection, "features"
+    colDomain("aggregates").Add colAggregate, colFeature("aggregate")
     basSystem.log "aggregate " & colFeature("aggregate") & " added to the model"
     Resume Next
 error_handler:
