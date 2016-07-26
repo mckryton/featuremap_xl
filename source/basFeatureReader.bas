@@ -31,7 +31,7 @@ Option Explicit
 Public Function getFeatureFilesDir() As String
 
     Dim strFeatureNameDir As Variant
-    Dim AppleScript As String
+    Dim strAppleScript As String
     
     #If Mac Then
     
@@ -42,9 +42,14 @@ Public Function getFeatureFilesDir() As String
     On Error GoTo error_handler
     #If Mac Then
         'TODO: fix known bug -> umlauts like Š get converted by vba into a_
-        AppleScript = "(choose folder with prompt ""choose feature folder"" default location (path to the desktop folder from user domain)) as string"
-        strFeatureNameDir = MacScript(AppleScript)
+        strAppleScript = "try" & vbLf & _
+                            "return (choose folder with prompt ""choose feature folder"" default location (path to the desktop folder from user domain)) as string" & vbLf & _
+                        "on error" & vbLf & _
+                            "return """"" & vbLf & _
+                        "end try"
+        strFeatureNameDir = MacScript(strAppleScript)
     #Else
+        'TODO: catch cancel dialog
         Set dlgChooseFolder = Application.FileDialog(msoFileDialogFolderPicker)
         With dlgChooseFolder
             .Title = "Please choose a feature folder"

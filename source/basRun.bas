@@ -40,6 +40,10 @@ Public Sub runFeatureMap()
     On Error GoTo error_handler
     'select a folder containing feature descriptions, text files with a .feature extension
     strFeatureDir = basFeatureReader.getFeatureFilesDir()
+    If strFeatureDir = "" Then
+        basSystem.log "choose feature folder dialog was canceled"
+        Exit Sub
+    End If
     
     'extract features and scenarios from feature files
     Set colDomainModel = basFeatureReader.setupDataModel(strFeatureDir)
