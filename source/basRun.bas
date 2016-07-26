@@ -53,10 +53,9 @@ Public Sub runFeatureMap()
 '    --connect each with it's parent
 '    my connectItems(vDrawingDoc)
     
-'    --set height of every domain box to max height
-'    my levelDomainHeight(vDrawingDoc)
-
-
+    'set height of every domain box to max height
+    basModelVisualizer.levelDomainHeight wshDrawing
+    
     Application.StatusBar = False
     Exit Sub
     

@@ -32,13 +32,13 @@ Global Const cblnHideAggregatesDefault = False
 Global Const cstrDomainTag = "d"    'domain tag example for a car domain: @d-car
 
 'distance between drawing and document border
-Global Const clngDocPaddingX = 50
-Global Const clngDocPaddingY = 50
+Global Const clngDocPaddingX = 20
+Global Const clngDocPaddingY = 20
 'distance between cDocPaddingX and domain box (e.g. to place user icons)
-Global Const clngDomainPaddingX = 50
+Global Const clngDomainPaddingX = 20
 'white space around any item (e.g. feature, scenario or aggregate)
 Global Const clngItemPaddingX = 20
 Global Const clngItemPaddingY = 20
 'item size
-Global Const clngItemWidth = 140
-Global Const clngItemHeight = 55
+Global Const clngItemWidth = 200
+Global Const clngItemHeight = 90

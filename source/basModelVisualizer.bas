@@ -181,7 +181,7 @@ Private Sub drawDomain(pwshDrawing As Worksheet, plngDomainCount As Long, plngMa
     lngDomainWidth = 2 * (pintTypeCount * 2 * clngItemPaddingX + pintTypeCount * clngItemWidth)
     lngDomainHeight = (plngMaxScenarioCount + 1) * (2 * clngItemPaddingY + clngItemHeight)
     
-    basSystem.log "draw domain " & pstrDomainName
+    basSystem.log "draw domain >" & pstrDomainName & "<"
     Set shpDomain = pwshDrawing.Shapes.AddShape(msoShapeRectangle, lngOriginX, lngOriginY, lngDomainWidth, lngDomainHeight)
     shpDomain.TextFrame.Characters.Text = pstrDomainName
     'format domain box background
@@ -237,7 +237,7 @@ Private Sub drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByV
     Dim lngSideOffsetX As Long
     Dim lngDomainWidth As Long
     Dim lngDomainHeight As Long
-    Dim shpDomain As Shape
+    Dim shpAggregate As Shape
     Dim lngCurrentAggregateScenarioCount As Long
     Dim lngOtherAggregateScenarioCount As Long
     Dim lngScenarioCountOffsetY As Long
@@ -274,10 +274,10 @@ Private Sub drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByV
 '            {name:"Circle", textSize:{0.8, 0.7}, size:{cItemWidth, cItemHeight}, text:{alignment:center, text:pAggregateName}, origin:{vOriginX, vOriginY}, magnets:{{0, 0.5}, {0, -0.5}, {0.5, 0}, {-0.5, 0}, {-0.29, -0.41}, {-0.29, 0.41}, {0.29, 0.41}, {0.29, -0.41}}, textPosition:{0.1, 0.15}, vertical padding:0, thickness:2, user data:{itemtype:"aggregate", domain:pDomainName}}
 '    end tell
 
-    Set shpDomain = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
-    shpDomain.TextFrame.Characters.Text = pstrAggregateName
+    Set shpAggregate = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
+    shpAggregate.TextFrame.Characters.Text = pstrAggregateName
     'format domain box background
-    With shpDomain.Fill
+    With shpAggregate.Fill
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorBackground1
         .ForeColor.TintAndShade = 0
@@ -285,13 +285,14 @@ Private Sub drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByV
         .Solid
     End With
     'format domain box frame
-    With shpDomain.Line
+    With shpAggregate.Line
+        .Weight = 3
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorText1
         .ForeColor.TintAndShade = 0
     End With
     'format domain box text
-    With shpDomain.TextFrame2.TextRange.Font
+    With shpAggregate.TextFrame2.TextRange.Font
         .Size = 14
         .Name = "Helvetica"
         .Fill.Visible = msoTrue
@@ -300,7 +301,7 @@ Private Sub drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByV
         .Fill.Transparency = 0
         .Fill.Solid
     End With
-    shpDomain.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
+    shpAggregate.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
     Exit Sub
     
 error_handler:
@@ -331,7 +332,7 @@ Private Sub drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal
     Dim lngSideOffsetX As Long
     Dim lngDomainWidth As Long
     Dim lngDomainHeight As Long
-    Dim shpDomain As Shape
+    Dim shpFeature As Shape
     Dim lngCurrentFeatureScenarioCount As Long
     Dim lngOtherFeaturesScenarioCount As Long
     Dim lngScenarioCountOffsetY As Long
@@ -376,10 +377,10 @@ Private Sub drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal
 '            {name:"Circle", textSize:{0.8, 0.7}, size:{cItemWidth, cItemHeight}, text:{alignment:center, text:pFeatureName}, origin:{vOriginX, vOriginY}, magnets:{{0, 0.5}, {0, -0.5}, {0.5, 0}, {-0.5, 0}, {-0.29, -0.41}, {-0.29, 0.41}, {0.29, 0.41}, {0.29, -0.41}}, textPosition:{0.1, 0.15}, thickness:1, vertical padding:0, user data:{aggregate:pAggregateName, itemtype:"feature", domain:pDomainName, featureid:pFeatureId, featurefileid:pFeatureFileId}, fill color:vStatusColor}
 '    end tell
     
-    Set shpDomain = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
-    shpDomain.TextFrame.Characters.Text = pstrFeatureName
+    Set shpFeature = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
+    shpFeature.TextFrame.Characters.Text = pstrFeatureName
     'format domain box background
-    With shpDomain.Fill
+    With shpFeature.Fill
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorBackground1
         .ForeColor.TintAndShade = 0
@@ -387,13 +388,14 @@ Private Sub drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal
         .Solid
     End With
     'format domain box frame
-    With shpDomain.Line
+    With shpFeature.Line
+        .Weight = 2
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorText1
         .ForeColor.TintAndShade = 0
     End With
     'format domain box text
-    With shpDomain.TextFrame2.TextRange.Font
+    With shpFeature.TextFrame2.TextRange.Font
         .Size = 14
         .Name = "Helvetica"
         .Fill.Visible = msoTrue
@@ -402,7 +404,7 @@ Private Sub drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal
         .Fill.Transparency = 0
         .Fill.Solid
     End With
-    shpDomain.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
+    shpFeature.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
     Exit Sub
     
 error_handler:
@@ -433,7 +435,7 @@ Private Sub drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVa
     Dim lngSideOffsetX As Long
     Dim lngDomainWidth As Long
     Dim lngDomainHeight As Long
-    Dim shpDomain As Shape
+    Dim shpScenario As Shape
     
     On Error GoTo error_handler
     lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX _
@@ -462,10 +464,10 @@ Private Sub drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVa
 '            {name:"Circle", textSize:{0.8, 0.7}, size:{cItemWidth, cItemHeight}, text:{alignment:center, text:name of pScenario}, origin:{vOriginX, vOriginY}, magnets:{{0, 0.5}, {0, -0.5}, {0.5, 0}, {-0.5, 0}, {-0.29, -0.41}, {-0.29, 0.41}, {0.29, 0.41}, {0.29, -0.41}}, textPosition:{0.1, 0.15}, thickness:0.25, vertical padding:0, user data:{featureid:pFeatureId, featurefileid:pFeatureFileId, feature:pFeatureName, itemtype:"scenario", domain:pDomainName}, fill color:vStatusColor}
 '    end tell
     
-    Set shpDomain = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
-    shpDomain.TextFrame.Characters.Text = pcolScenario("name")
+    Set shpScenario = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
+    shpScenario.TextFrame.Characters.Text = pcolScenario("name")
     'format domain box background
-    With shpDomain.Fill
+    With shpScenario.Fill
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorBackground1
         .ForeColor.TintAndShade = 0
@@ -473,13 +475,14 @@ Private Sub drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVa
         .Solid
     End With
     'format domain box frame
-    With shpDomain.Line
+    With shpScenario.Line
+        .Weight = 0.5
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorText1
         .ForeColor.TintAndShade = 0
     End With
     'format domain box text
-    With shpDomain.TextFrame2.TextRange.Font
+    With shpScenario.TextFrame2.TextRange.Font
         .Size = 14
         .Name = "Helvetica"
         .Fill.Visible = msoTrue
@@ -488,10 +491,41 @@ Private Sub drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVa
         .Fill.Transparency = 0
         .Fill.Solid
     End With
-    shpDomain.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
+    shpScenario.TextFrame2.TextRange.ParagraphFormat.Alignment = msoAlignCenter
     Exit Sub
     
 error_handler:
     basSystem.log_error "basModelVisualizer.drawScenario"
 End Sub
+'-------------------------------------------------------------
+' Description   : set height of all domain boxes to the same size
+' Parameter     : pwshDrawing           - xl worksheet to draw on
+' Returnvalue   :
+'-------------------------------------------------------------
+Public Sub levelDomainHeight(pwshDrawing As Worksheet)
 
+    Dim shpAnyShape As Shape
+    Dim shpDomainBox As Shape
+    Dim lngMaxHeight As Long
+    Dim colDomainShapes As New Collection
+    
+    On Error GoTo error_handler
+    lngMaxHeight = 0
+    For Each shpAnyShape In pwshDrawing.Shapes
+        'only domain boxes are rectangles
+        If shpAnyShape.AutoShapeType = msoShapeRectangle Then
+            colDomainShapes.Add shpAnyShape
+            If shpAnyShape.Height > lngMaxHeight Then
+                lngMaxHeight = shpAnyShape.Height
+            End If
+        End If
+    Next
+    'now level domain boxes
+    For Each shpDomainBox In colDomainShapes
+        shpDomainBox.Height = lngMaxHeight
+    Next
+    Exit Sub
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.levelDomainHeight"
+End Sub
