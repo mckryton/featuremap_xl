@@ -58,7 +58,6 @@ Public Function getFeatureFilesDir() As String
         strFeatureDirDisk = strFeatureDirInfo(1)
         strFeatureDirFullPath = strFeatureDirDisk & strFeatureDirPath
     #Else
-        'TODO: catch cancel dialog
         Set dlgChooseFolder = Application.FileDialog(msoFileDialogFolderPicker)
         With dlgChooseFolder
             .Title = "Please choose a feature folder"
@@ -176,7 +175,21 @@ Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
                                                         varFeatureFilePath(UBound(varFeatureFilePath)))
         Next
     #Else
-    
+        Dim fsoFileSystem As Variant
+        Dim folFeatures As Variant
+        Dim filFeature As Variant
+        Dim strFiles As String
+        
+        strFiles = ""
+        Set fsoFileSystem = CreateObject("Scripting.FileSystemObject")
+        Set folFeatures = fsoFileSystem.GetFolder(pstrFeatureNameDir)
+        For Each filFeature In folFeatures.Files
+            If Trim(LCase(Right(filFeature.Name, Len(".feature")))) = ".feature" Then
+                strFiles = strFiles & filFeature.Name & "//"
+            End If
+        Next
+        strFiles = Left(strFiles, Len(strFiles) - 2)
+        varFeatureFiles = Split(strFiles, "//")
     #End If
     
     basSystem.log "found " & UBound(varFeatureFiles) + 1 & " .feature files"
@@ -221,7 +234,15 @@ Private Function readFeatureFile(ByVal pstrFeatureNameFile As String) As Collect
                     "return (paragraphs of (read (""" & pstrFeatureNameFile & """ as alias) as Çclass utf8È)) as string"
         varFileText = Split(MacScript(strScript), "#@#@")
     #Else
-        'TODO add windows support
+        Const cForReading = 1, cForWriting = 2
+   
+        Dim fsoFileSystem As Variant
+        Dim ftxFeatureFile As Variant
+        
+        Set fsoFileSystem = CreateObject("Scripting.FileSystemObject")
+        Set ftxFeatureFile = fsoFileSystem.OpenTextFile(pstrFeatureNameFile, cForReading, True)
+        varFileText = Split(ftxFeatureFile.readall, vbLf)
+        ftxFeatureFile.Close
     #End If
     'read all the lines above "Feature:"
     Do While lngLineNumber <= UBound(varFileText)
