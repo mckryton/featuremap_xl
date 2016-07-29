@@ -38,7 +38,7 @@ If you set the property cDisableAggregates in the head of the script to false th
 To set the domain name you have to follow a different approach. Add a line inside the feature file above the feature name. Add a **@d-** tag in this line (e.g. add @d-presentation to name your domain presentation).
 ![sample feature map](doc/img/featuremap_aggregate_sample.png)
 
-### colored bubbles
+### colored bubbles (not yet available for featuremap_xl)
 White backgrounds are boring. So I thought it would be nice to express the current status of a feature or scenario by changing the background. So the script is looking for status tags starting with @s- (e.g. @s-backlog) above a feature or scenario name and changes the background color accordingly. If you check the head of th script you will find some properties to adapt the script to your actual wording. You might also change the colors and the tag syntax.
 ![sample feature map](doc/img/sample_map_status.png)
 In this example I've set the status for features only but of course it's possible to set the status for scenarios too.
