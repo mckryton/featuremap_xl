@@ -14,6 +14,8 @@ As a result your map could look like this:
 
 ![sample feature map](doc/img/sample_map.png)
 
+**Hint:** look for the features folder for this script to try this out!
+
 #### known limitations
 Because of the sandbox model in MacOS and the addaption to this of Excel 2016 the script might not be able to access your feature file.
 
