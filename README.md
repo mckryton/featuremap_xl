@@ -4,8 +4,12 @@ The featuremap script turns BDD feature files into an usecase map using MS Excel
 
 ## prerequisites
 
-* MS Excel 2011 (Mac) or MS Excel 2007 (Windows)
+* MS Excel 2011 (Mac) or MS Excel 2007 (Windows) 
+* the script should work with newer version with MS Excel for Windows
 * BDD style feature files (just text, one feature per file, like for [Cucumber](https://github.com/cucumber/cucumber/wiki/Feature-Introduction))
+
+#### known limitations
+Because of the sandbox model in MacOS and the addaption to this of Excel 2016 the script might not be able to access your feature file.
 
 ## usage
 Open the featuremap_xl.xlsm with macros activated. Click on the "create a new feature map" button. The macro will ask your for the folder containing your .feature files.
@@ -15,10 +19,6 @@ As a result your map could look like this:
 ![sample feature map](doc/img/sample_map.png)
 
 **Hint:** look for the features folder for this script to try this out!
-
-#### known limitations
-Because of the sandbox model in MacOS and the addaption to this of Excel 2016 the script might not be able to access your feature file.
-
 
 ## background
 ### motivation
