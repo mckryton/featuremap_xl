@@ -36,8 +36,15 @@ Public Sub runFeatureMap()
     Dim colDomainModel As Collection
     'local vDrawingDoc
     Dim wshDrawing As Worksheet
+    Dim frmOptions As New frmOptionsTemplate
     
     On Error GoTo error_handler
+    'show options
+    frmOptions.Show
+    If frmOptions.FormCanceled Then
+        Exit Sub
+    End If
+    
     'select a folder containing feature descriptions, text files with a .feature extension
     strFeatureDir = basFeatureReader.getFeatureFilesDir()
     If strFeatureDir = "" Then
@@ -52,10 +59,7 @@ Public Sub runFeatureMap()
     Set wshDrawing = createDrawingDoc()
     
     'draw domain boxes with all aggregates, features and scenarios
-    basModelVisualizer.visualizeModel wshDrawing, colDomainModel, cblnHideAggregatesDefault
-    
-'    --connect each with it's parent
-'    my connectItems(vDrawingDoc)
+    basModelVisualizer.visualizeModel wshDrawing, colDomainModel, frmOptions.HideAggregates
     
     'set height of every domain box to max height
     basModelVisualizer.levelDomainHeight wshDrawing

@@ -25,8 +25,12 @@ Option Explicit
 Global Const cblnGetAggregatesFromFeatureName = True
 
 'if true aggregates are hidden from the drawing unless user decides otherwise
-'TODO: show configuration dialog after macro is started
+'may be changed by user on the options form
 Global Const cblnHideAggregatesDefault = False
+
+'if true every domain box will be drawn on a dedicate worksheet
+'may be changed by user on the options form
+Global Const cblnDrawDomainsOnSeparatePagesDefault = False
 
 'reserved tag names
 Global Const cstrDomainTag = "d"    'domain tag example for a car domain: @d-car
