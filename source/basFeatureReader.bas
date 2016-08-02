@@ -278,7 +278,9 @@ Private Function readFeatureFile(ByVal pstrFeatureNameFile As String) As Collect
             strScenarioName = Right(strParagraph, Len(strParagraph) - InStr(LCase(strParagraph), "scenario:") - 9)
             colScenario.Add strScenarioName, "name"
             colScenario.Add colScenarioTags, "tags"
+            On Error GoTo duplicate_scenario_name
             colScenarios.Add colScenario, strScenarioName
+            On Error GoTo error_handler
             'get ready for the next scenario
             Set colScenario = New Collection
             Set colScenarioTags = New Collection
@@ -298,6 +300,9 @@ Private Function readFeatureFile(ByVal pstrFeatureNameFile As String) As Collect
     Set readFeatureFile = colFeature
     Exit Function
     
+duplicate_scenario_name:
+    basSystem.log "duplicate scenario name found: >" & strScenarioName & "<", cLogWarning
+    Resume Next
 error_handler:
     basSystem.log_error "basFeatureReader.readFeatureFile"
 End Function
