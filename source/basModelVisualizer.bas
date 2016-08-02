@@ -43,7 +43,7 @@ Public Function createDrawingDoc() As Worksheet
     Wend
     'hide gridlines
     Set wshDrawing = wbkDrawing.Worksheets(1)
-    wshDrawing.Name = "feature map"
+    wshDrawing.Name = cstrDefaultDrawingPageName
     wbkDrawing.Windows(1).DisplayGridlines = False
     
     Application.DisplayAlerts = True
@@ -58,11 +58,11 @@ End Function
 '                   draw domains as surrounding boxes
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
 '                 pcolDomainModel       - domain model as structured collection
-'                 pblnHideAggregates    - if true aggregates are hidden from the drawing
+'                 pcolDrawingOptions    - drawing options from options form
 ' Returnvalue   : a collection containing all corresponding connection items (e.g. feature and scenario)
 '-------------------------------------------------------------
 Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Collection, _
-                                pblnHideAggregates As Boolean) As Collection
+                                pcolDrawingOptions As Collection) As Collection
 
     Dim lngDomainCount As Long
     'the current drawing side of a domain box
@@ -81,13 +81,20 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
     Dim colConnectionTargetScenarios As Collection
     Dim colConnectionTargetFeatures As Collection
     Dim strShapeName As String
+    'if true aggregates are hidden from the drawing
+    Dim blnHideAggregates As Boolean
+    Dim blnDrawDomainsOnSeparatePages As Boolean
+    Dim wshDrawing As Worksheet
     
     On Error GoTo error_handler
+    Set wshDrawing = pwshDrawing
+    blnHideAggregates = pcolDrawingOptions(cstrOptionNameHideAggregates)
+    blnDrawDomainsOnSeparatePages = pcolDrawingOptions(cstrOptionNameDrawDomainsOnSeparatePages)
     lngDomainCount = 0
     'start drawing on the left side of a domain box
     blnDrawOnLeftSide = True
     'types: aggregates, features, scenarios
-    If pblnHideAggregates = True Then
+    If blnHideAggregates = True Then
         intTypeCount = 2
     Else
         intTypeCount = 3
@@ -97,6 +104,9 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
         'initialise counters
         lngScenarioCountLeft = 0
         lngScenarioCountRight = 0
+        If blnDrawDomainsOnSeparatePages = True Then
+            Set wshDrawing = basModelVisualizer.getNewDrawingPage(wshDrawing, colDomain("name"))
+        End If
         'TODO: decide on domain level if there is only one aggregate named undefined don't draw aggregates at all
         For Each colAggregate In colDomain("aggregates")
             'start counting how many scenarios are assigned to the current aggregate
@@ -112,8 +122,9 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
                 Set colConnectionTargetScenarios = New Collection
                 For Each colScenario In colFeature("scenarios")
                     lngScenarioCount = lngScenarioCount + 1
-                    strShapeName = drawScenario(pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
-                        colDomain("name"), colFeature("id"), colFeature("fileId"), colFeature("name"), _
+                    strShapeName = drawScenario(wshDrawing, lngDomainCount, blnDrawOnLeftSide, _
+                        blnDrawDomainsOnSeparatePages, intTypeCount, colDomain("name"), _
+                        colFeature("id"), colFeature("fileId"), colFeature("name"), _
                         lngScenarioCount, colScenario)
                     colConnectionTargetScenarios.Add strShapeName
                 Next
@@ -123,11 +134,12 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
                     lngAggregateScenarioCount = lngAggregateScenarioCount + 1
                 End If
                 lngAggregateScenarioCount = lngAggregateScenarioCount + colFeature("scenarios").Count
-                strShapeName = drawFeature(pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
+                strShapeName = drawFeature(wshDrawing, lngDomainCount, blnDrawOnLeftSide, _
+                        blnDrawDomainsOnSeparatePages, intTypeCount, _
                         colDomain("name"), colAggregate("name"), colFeature("id"), colFeature("fileId"), _
                         colFeature("name"), colFeature("scenarios").Count, lngScenarioCount)
                 colConnectionTargetFeatures.Add strShapeName
-                drawConnections pwshDrawing, strShapeName, colConnectionTargetScenarios
+                drawConnections wshDrawing, strShapeName, colConnectionTargetScenarios
                 Set colConnectionTargetScenarios = Nothing
                 'count how many scenarios are on each side of the domain box to be able to calculate the size of the domain box
                 If blnDrawOnLeftSide = True Then
@@ -136,18 +148,19 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
                     lngScenarioCountRight = lngScenarioCount
                 End If
                 'switch side after each feature if aggregates are hidden
-                If pblnHideAggregates = True Then
+                If blnHideAggregates = True Then
                     blnDrawOnLeftSide = Not blnDrawOnLeftSide
                 End If
             Next
-            If pblnHideAggregates = False Then
-                strShapeName = drawAggregate(pwshDrawing, lngDomainCount, blnDrawOnLeftSide, intTypeCount, _
+            If blnHideAggregates = False Then
+                strShapeName = drawAggregate(wshDrawing, lngDomainCount, blnDrawOnLeftSide, _
+                            blnDrawDomainsOnSeparatePages, intTypeCount, _
                             colDomain("name"), colAggregate("name"), lngScenarioCount, lngAggregateScenarioCount)
-                drawConnections pwshDrawing, strShapeName, colConnectionTargetFeatures
+                drawConnections wshDrawing, strShapeName, colConnectionTargetFeatures
                 Set colConnectionTargetFeatures = Nothing
             End If
             'flip drawing side after each aggregate
-            If pblnHideAggregates = False Then
+            If blnHideAggregates = False Then
                 blnDrawOnLeftSide = Not blnDrawOnLeftSide
             End If
         Next
@@ -156,7 +169,8 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
         Else
             lngMaxScenarioCount = lngScenarioCountRight
         End If
-        drawDomain pwshDrawing, lngDomainCount, lngMaxScenarioCount, intTypeCount, colDomain("name")
+        drawDomain wshDrawing, blnDrawDomainsOnSeparatePages, lngDomainCount, lngMaxScenarioCount, _
+                    intTypeCount, colDomain("name")
         lngDomainCount = lngDomainCount + 1
     Next
 
@@ -166,15 +180,57 @@ error_handler:
     basSystem.log_error "basModelVisualizer.visualizeModel"
 End Function
 '-------------------------------------------------------------
+' Description   : create a new empty worksheet for drawing
+' Parameter     : pwshCurrentPage   -
+'                 pstrDomainName    -
+' Returnvalue   : the worksheet used for drawing
+'-------------------------------------------------------------
+Public Function getNewDrawingPage(pwshCurrentPage As Worksheet, pstrDomainName As String) As Worksheet
+
+    Dim wbkDrawing As Workbook
+    Dim wshDrawing As Worksheet
+    Dim strPageName As String
+
+    On Error GoTo error_handler
+    basSystem.log "create a new page for domain " & pstrDomainName
+    strPageName = Left(pstrDomainName, 30)
+    'remove invalid charachters from page name
+    strPageName = Replace(strPageName, "?", "")
+    strPageName = Replace(strPageName, "/", "-")
+    strPageName = Replace(strPageName, "\", "-")
+    strPageName = Replace(strPageName, "*", "+")
+    strPageName = Replace(strPageName, "[", " ")
+    strPageName = Replace(strPageName, "]", " ")
+    
+    If pwshCurrentPage.Name = cstrDefaultDrawingPageName Then
+        'if the default page is the current one don't add a new one
+        Set wshDrawing = pwshCurrentPage
+    Else
+        Set wshDrawing = pwshCurrentPage.Parent.Worksheets.Add
+    End If
+    wshDrawing.Name = strPageName
+    'hide gridlines
+    wshDrawing.Parent.Windows(1).DisplayGridlines = False
+    Application.DisplayAlerts = True
+    Set getNewDrawingPage = wshDrawing
+    Exit Function
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.getNewDrawingPage"
+End Function
+'-------------------------------------------------------------
 ' Description   : draw domains as surrounding boxes
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
+'                 pblnDrawDomainsOnSeparatePages
 '                 plngDomainCount       - index of the current domain
 '                 plngMaxScenarioCount  - max number scenarios for one side of the domain box
 '                 pintTypeCount        - number of drawn use case types
-'                 pstrDomainName
+'                 pstrDomainName        -
+'                 pcolDrawingOptions    -
 ' Returnvalue   :
 '-------------------------------------------------------------
-Private Sub drawDomain(pwshDrawing As Worksheet, plngDomainCount As Long, plngMaxScenarioCount As Long, _
+Private Sub drawDomain(pwshDrawing As Worksheet, pblnDrawDomainsOnSeparatePages As Boolean, _
+                        plngDomainCount As Long, plngMaxScenarioCount As Long, _
                         pintTypeCount As Integer, ByVal pstrDomainName As String)
     
     Dim lngDomainOffsetX As Long
@@ -185,8 +241,13 @@ Private Sub drawDomain(pwshDrawing As Worksheet, plngDomainCount As Long, plngMa
     Dim shpDomain As Shape
     
     On Error GoTo error_handler
-    lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX _
-                        + pintTypeCount * clngItemWidth + 2 * clngDomainPaddingX)
+    If pblnDrawDomainsOnSeparatePages Then
+        lngDomainOffsetX = 0
+    Else
+        'TODO: this breaks if some domains hide aggregates and some not
+        lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX _
+                            + pintTypeCount * clngItemWidth + 2 * clngDomainPaddingX)
+    End If
     lngOriginX = clngDocPaddingX + clngDomainPaddingX + lngDomainOffsetX
     lngOriginY = clngDocPaddingY
     lngDomainWidth = 2 * (pintTypeCount * 2 * clngItemPaddingX + pintTypeCount * clngItemWidth)
@@ -231,6 +292,7 @@ End Sub
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
 '                 plngDomainCount       - index of the current domain
 '                 pblnDrawOnLeftSide    -
+'                 pblnDrawDomainsOnSeparatePages
 '                 pintTypeCount        - number of drawn use case types
 '                 pstrDomainName
 '                 pstrAggregateName
@@ -239,7 +301,8 @@ End Sub
 ' Returnvalue   : shape name as string
 '-------------------------------------------------------------
 Private Function drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
-                        pintTypeCount As Integer, ByVal pstrDomainName As String, pstrAggregateName As String, _
+                        pblnDrawDomainsOnSeparatePages As Boolean, pintTypeCount As Integer, _
+                        ByVal pstrDomainName As String, pstrAggregateName As String, _
                         plngScenarioCount As Long, plngCurrentAggregateScenarioCount As Long) As String
     
     Dim lngDomainOffsetX As Long
@@ -263,9 +326,13 @@ Private Function drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long
     lngScenarioCountOffsetY = (lngOtherAggregateScenarioCount * (2 * clngItemPaddingY + clngItemHeight))
     lngOriginY = clngDocPaddingY + lngScenarioCountOffsetY + (lngCurrentAggregateScenarioCount / 2 * _
                     (2 * clngItemPaddingY + clngItemHeight)) + (clngItemPaddingY + clngItemHeight / 2)
-    'TODO: this breaks if some domains hide aggregates and some not
-    lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX + pintTypeCount * clngItemWidth _
-                        + 2 * clngDomainPaddingX)
+    If pblnDrawDomainsOnSeparatePages Then
+        lngDomainOffsetX = 0
+    Else
+        'TODO: this breaks if some domains hide aggregates and some not
+        lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX + pintTypeCount * clngItemWidth _
+                            + 2 * clngDomainPaddingX)
+    End If
     If pblnDrawOnLeftSide = True Then
         'draw aggregate on the left side of the domain box
         lngSideOffsetX = 0
@@ -278,12 +345,6 @@ Private Function drawAggregate(pwshDrawing As Worksheet, plngDomainCount As Long
     End If
 
     basSystem.log "draw aggregate >" & pstrAggregateName & "<"
-
-'    tell application "OmniGraffle"
-'        set vLayerModel to layer "functions" of canvas "model" of pDrawingDoc
-'        make new shape at end of graphics of vLayerModel with properties Â
-'            {name:"Circle", textSize:{0.8, 0.7}, size:{cItemWidth, cItemHeight}, text:{alignment:center, text:pAggregateName}, origin:{vOriginX, vOriginY}, magnets:{{0, 0.5}, {0, -0.5}, {0.5, 0}, {-0.5, 0}, {-0.29, -0.41}, {-0.29, 0.41}, {0.29, 0.41}, {0.29, -0.41}}, textPosition:{0.1, 0.15}, vertical padding:0, thickness:2, user data:{itemtype:"aggregate", domain:pDomainName}}
-'    end tell
 
     Set shpAggregate = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
     shpAggregate.TextFrame.Characters.Text = pstrAggregateName
@@ -324,6 +385,7 @@ End Function
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
 '                 plngDomainCount       - index of the current domain
 '                 pblnDrawOnLeftSide    -
+'                 pblnDrawDomainsOnSeparatePages
 '                 pintTypeCount        - number of drawn use case types
 '                 pstrDomainName
 '                 pstrAggregateName
@@ -334,7 +396,8 @@ End Function
 ' Returnvalue   : shape name as string
 '-------------------------------------------------------------
 Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
-                        pintTypeCount As Integer, ByVal pstrDomainName As String, pstrAggregateName As String, _
+                        pblnDrawDomainsOnSeparatePages As Boolean, pintTypeCount As Integer, _
+                        ByVal pstrDomainName As String, pstrAggregateName As String, _
                         plngFeatureId As Long, plngFeatureFileId As Long, pstrFeatureName As String, _
                         plngCurrentFeatureScenarioCount As Long, plngAllScenarioCount As Long) As String
     
@@ -364,9 +427,13 @@ Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, 
     lngScenarioCountOffsetY = (lngOtherFeaturesScenarioCount * (2 * clngItemPaddingY + clngItemHeight))
     lngOriginY = clngDocPaddingY + lngScenarioCountOffsetY + (lngCurrentFeatureScenarioCount / 2 * (2 * clngItemPaddingY _
                     + clngItemHeight)) + (clngItemPaddingY + clngItemHeight / 2)
-    'TODO: this breaks if some domains hide aggregates and some not
-    lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX + pintTypeCount * clngItemWidth _
-                        + 2 * clngDomainPaddingX)
+    If pblnDrawDomainsOnSeparatePages Then
+        lngDomainOffsetX = 0
+    Else
+        'TODO: this breaks if some domains hide aggregates and some not
+        lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX + pintTypeCount * clngItemWidth _
+                            + 2 * clngDomainPaddingX)
+    End If
     If pblnDrawOnLeftSide = True Then
         'draw feature on the left side of the domain box
         lngSideOffsetX = 0
@@ -428,6 +495,7 @@ End Function
 ' Parameter     : pwshDrawing           - xl worksheet to draw on
 '                 plngDomainCount       - index of the current domain
 '                 pblnDrawOnLeftSide    -
+'                 pblnDrawDomainsOnSeparatePages
 '                 pintTypeCount        - number of drawn use case types
 '                 pstrDomainName
 '                 plngFeatureId
@@ -438,9 +506,9 @@ End Function
 ' Returnvalue   : shape name as string
 '-------------------------------------------------------------
 Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
-                        pintTypeCount As Integer, ByVal pstrDomainName As String, plngFeatureId As Long, _
-                        plngFeatureFileId As Long, pstrFeatureName As String, plngScenarioCount As Long, _
-                        pcolScenario As Collection) As String
+                        pblnDrawDomainsOnSeparatePages As Boolean, pintTypeCount As Integer, ByVal pstrDomainName As String, _
+                        plngFeatureId As Long, plngFeatureFileId As Long, pstrFeatureName As String, _
+                        plngScenarioCount As Long, pcolScenario As Collection) As String
     
     Dim lngDomainOffsetX As Long
     Dim lngOriginX As Long
@@ -451,8 +519,13 @@ Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long,
     Dim shpScenario As Shape
     
     On Error GoTo error_handler
-    lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX _
-                        + pintTypeCount * clngItemWidth + 2 * clngDomainPaddingX)
+    If pblnDrawDomainsOnSeparatePages Then
+        lngDomainOffsetX = 0
+    Else
+        'TODO: this breaks if some domains hide aggregates and some not
+        lngDomainOffsetX = plngDomainCount * 2 * (pintTypeCount * 2 * clngItemPaddingX _
+                            + pintTypeCount * clngItemWidth + 2 * clngDomainPaddingX)
+    End If
     If pblnDrawOnLeftSide = False Then
         'draw scenario on the right side of the domain box
         lngSideOffsetX = (pintTypeCount * (2 * clngItemPaddingX + clngItemWidth))

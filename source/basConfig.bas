@@ -32,6 +32,12 @@ Global Const cblnHideAggregatesDefault = False
 'may be changed by user on the options form
 Global Const cblnDrawDomainsOnSeparatePagesDefault = False
 
+'setting names used in collection objects
+Global Const cstrOptionNameHideAggregates = "hideAggregates"
+Global Const cstrOptionNameDrawDomainsOnSeparatePages = "drawDomainsOnSeparatePages"
+
+Global Const cstrDefaultDrawingPageName = "feature map"
+
 'reserved tag names
 Global Const cstrDomainTag = "d"    'domain tag example for a car domain: @d-car
 

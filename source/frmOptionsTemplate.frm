@@ -3,7 +3,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmOptionsTemplate
    Caption         =   "featuremap options"
    ClientHeight    =   6000
    ClientLeft      =   0
-   ClientTop       =   -3220
+   ClientTop       =   -4140
    ClientWidth     =   10000
    OleObjectBlob   =   "frmOptionsTemplate.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -35,6 +35,7 @@ Attribute VB_Exposed = False
 
 'Declare variables
 Dim mblnFormCanceled As Boolean
+Dim mcolDrawingOptions As Collection
 
 'Options
 Option Explicit
@@ -101,33 +102,22 @@ error_handler:
     basSystem.log_error "frmOptions.Get FormCanceled"
 End Property
 '-------------------------------------------------------------
-' Description   : return bool to decide if aggrepgates should
-'                   be left from the drawing
+' Description   : return collection with all drawing options
 ' Parameter     :
-' Returnvalue   : checkbox value as boolean
+' Returnvalue   : collection containing all options
 '-------------------------------------------------------------
-Public Property Get HideAggregates() As Boolean
+Public Property Get DrawingOptions() As Collection
     
     On Error GoTo error_handler
-    HideAggregates = Me.chkHideAggregates.Value
+    If TypeName(mcolDrawingOptions) = "Nothing" Then
+        Set mcolDrawingOptions = New Collection
+        mcolDrawingOptions.Add Me.chkHideAggregates.Value, cstrOptionNameHideAggregates
+        mcolDrawingOptions.Add Me.chkDrawDomainsOnSeparatePages.Value, cstrOptionNameDrawDomainsOnSeparatePages
+    End If
+    Set DrawingOptions = mcolDrawingOptions
     Exit Property
     
 error_handler:
-    basSystem.log_error "frmOptions.Get HideAggregatesDefault"
-End Property
-'-------------------------------------------------------------
-' Description   : return bool to decide if domains should be
-'                   drawn on dedicated worksheets
-' Parameter     :
-' Returnvalue   : checkbox value as boolean
-'-------------------------------------------------------------
-Public Property Get DrawDomainsOnSeparatePages() As Boolean
-    
-    On Error GoTo error_handler
-    DrawDomainsOnSeparatePages = Me.chkDrawDomainsOnSeparatePages.Value
-    Exit Property
-    
-error_handler:
-    basSystem.log_error "frmOptions.Get DrawDomainsOnSeparatePages"
+    basSystem.log_error "frmOptions.Get DrawingOptions"
 End Property
 

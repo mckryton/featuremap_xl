@@ -59,7 +59,7 @@ Public Sub runFeatureMap()
     Set wshDrawing = createDrawingDoc()
     
     'draw domain boxes with all aggregates, features and scenarios
-    basModelVisualizer.visualizeModel wshDrawing, colDomainModel, frmOptions.HideAggregates
+    basModelVisualizer.visualizeModel wshDrawing, colDomainModel, frmOptions.DrawingOptions
     
     'set height of every domain box to max height
     basModelVisualizer.levelDomainHeight wshDrawing
