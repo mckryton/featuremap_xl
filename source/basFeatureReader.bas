@@ -36,14 +36,13 @@ Public Function getFeatureFilesDir() As String
     Dim strFeatureDirFullPath As String
     Dim strAppleScript As String
     
-    #If Mac Then
-    
-    #Else
-        Dim dlgChooseFolder As FileDialog
-    #End If
-
     On Error GoTo error_handler
-    #If Mac Then
+    strFeatureDirFullPath = ""
+    #If MAC_OFFICE_VERSION >= 15 Then
+        'because of the sandbox model in MacOS, Excel can't access any external directory
+        MsgBox "Excel 2016 MAC is not yet supported"
+
+    #ElseIf Mac Then
         'TODO: fix known bug -> umlauts like Š get converted by vba into a_
         strAppleScript = "try" & vbLf & _
                                 "tell application ""Finder""" & vbLf & _
@@ -58,6 +57,8 @@ Public Function getFeatureFilesDir() As String
         strFeatureDirDisk = strFeatureDirInfo(1)
         strFeatureDirFullPath = strFeatureDirDisk & strFeatureDirPath
     #Else
+        Dim dlgChooseFolder As FileDialog
+
         Set dlgChooseFolder = Application.FileDialog(msoFileDialogFolderPicker)
         With dlgChooseFolder
             .Title = "Please choose a feature folder"
