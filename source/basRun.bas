@@ -39,6 +39,12 @@ Public Sub runFeatureMap()
     Dim frmOptions As New frmOptionsTemplate
     
     On Error GoTo error_handler
+    'warn for unsupported versions of Excel
+    #If MAC_OFFICE_VERSION >= 15 Then
+        MsgBox "Excel 2016 MAC is not yet supported, please use Excel 2011 or a Windows version"
+        Exit Sub
+    #End If
+
     'show options
     frmOptions.Show
     If frmOptions.FormCanceled Then

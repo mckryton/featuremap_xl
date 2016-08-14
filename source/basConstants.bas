@@ -28,7 +28,7 @@ Global Const cLogError = 30
 Global Const cLogCritical = 1
 
 'current log level - decreasing log level means decreasing amount of messages
-Global Const cCurrentLogLevel = 90
+Global Const cCurrentLogLevel = 100
 
 'item  types
 Global Const cItemTypeDomain = "domain"

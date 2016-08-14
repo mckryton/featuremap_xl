@@ -34,15 +34,28 @@ Public Function getFeatureFilesDir() As String
     Dim strFeatureDirDisk As String
     Dim strFeatureDirPath As String
     Dim strFeatureDirFullPath As String
-    Dim strAppleScript As String
-    
+
     On Error GoTo error_handler
     strFeatureDirFullPath = ""
     #If MAC_OFFICE_VERSION >= 15 Then
-        'because of the sandbox model in MacOS, Excel can't access any external directory
-        MsgBox "Excel 2016 MAC is not yet supported"
-
+        
+        Dim varScriptResult As Variant
+        
+        varScriptResult = AppleScriptTask("featuremap_xl.scpt", "chooseFeatureFolder", "")
+        basSystem.logd CStr(varScriptResult)
+        If Trim(CStr(varScriptResult)) = "" Then
+            getFeatureFilesDir = ""
+            Exit Function
+        End If
+        strFeatureDirInfo = Split(CStr(varScriptResult), "#@#@")
+        strFeatureDirPath = basSystem.decomposeUrlPath(strFeatureDirInfo(0))
+        strFeatureDirDisk = strFeatureDirInfo(1)
+        strFeatureDirFullPath = strFeatureDirDisk & strFeatureDirPath
+        AppActivate "Microsoft Excel"
     #ElseIf Mac Then
+
+        Dim strAppleScript As String
+
         'TODO: fix known bug -> umlauts like Š get converted by vba into a_
         strAppleScript = "try" & vbLf & _
                                 "tell application ""Finder""" & vbLf & _
@@ -75,6 +88,7 @@ Public Function getFeatureFilesDir() As String
     Exit Function
     
 error_handler:
+    Debug.Print Err.Description
     basSystem.log_error "basFeatureReader.getFeatureFilesDir"
 End Function
 

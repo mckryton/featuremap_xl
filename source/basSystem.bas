@@ -64,7 +64,10 @@ Public Function decomposeUrlPath(pstrEncodedUrl) As String
     strDecodedUrl = Replace(strDecodedUrl, "%3C", "<")
     strDecodedUrl = Replace(strDecodedUrl, "%3E", ">")
     strDecodedUrl = Right(strDecodedUrl, Len(strDecodedUrl) - Len("file://"))
-    strDecodedUrl = Replace(strDecodedUrl, "/", ":")
+    #If MAC_OFFICE_VERSION < 15 Then
+        'replace / path separator with : only for MAC Excel older then 2016
+        strDecodedUrl = Replace(strDecodedUrl, "/", ":")
+    #End If
     decomposeUrlPath = strDecodedUrl
     Exit Function
                      
@@ -150,7 +153,7 @@ End Sub
 ' Description   : alias to log function with cLogDebug level
 ' Parameter     :   pstrLogMsg      - log message
 '-------------------------------------------------------------
-Public Sub logd(pstrLogMsg As String)
+Public Sub logd(ByVal pstrLogMsg As String)
 
     On Error GoTo error_handler
     basSystem.log pstrLogMsg, cLogDebug
