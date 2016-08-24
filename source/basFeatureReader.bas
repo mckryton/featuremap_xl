@@ -172,7 +172,25 @@ Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
     
     On Error GoTo error_handler
     Application.StatusBar = "retrieve feature file names"
-    #If Mac Then
+    #If MAC_OFFICE_VERSION >= 15 Then
+        
+        Dim varScriptResult As Variant
+
+        pstrFeatureNameDir = Replace(pstrFeatureNameDir, "/", ":")
+        basSystem.logd "call ascript for folder " & pstrFeatureNameDir
+        varScriptResult = AppleScriptTask("featuremap_xl.scpt", "getFeatureFileNames", pstrFeatureNameDir)
+        basSystem.logd CStr(varScriptResult)
+        varFeatureFiles = Split(varScriptResult, "#@#@")
+        basSystem.logd "found " & UBound(varFeatureFiles) + 1 & " files"
+        
+        For lngFeatureFileIndex = 0 To UBound(varFeatureFiles)
+            varFeatureFilePath = Split(varFeatureFiles(lngFeatureFileIndex), "/")
+            'remove path from file name
+            varFeatureFiles(lngFeatureFileIndex) = varFeatureFilePath(UBound(varFeatureFilePath))
+        Next
+
+        AppActivate "Microsoft Excel"
+    #ElseIf Mac Then
         strScript = "set vFeatureFileNames to {}" & vbLf & _
                     "tell application ""Finder""" & vbLf & _
                         "set vFeaturesFolder to """ & pstrFeatureNameDir & """ as alias" & vbLf & _
@@ -244,7 +262,16 @@ Private Function readFeatureFile(ByVal pstrFeatureNameFile As String) As Collect
     
     basSystem.log "read data from feature file " & pstrFeatureNameFile
     'read lines of the feature file into an array
-    #If Mac Then
+     #If MAC_OFFICE_VERSION >= 15 Then
+        
+        Dim varScriptResult As Variant
+
+        basSystem.logd "call ascript for file " & pstrFeatureNameFile
+        varScriptResult = CStr(AppleScriptTask("featuremap_xl.scpt", "readFeatureFile", pstrFeatureNameFile))
+        basSystem.logd "file contains >" & varScriptResult
+        varFileText = Split(varScriptResult, "#@#@")
+
+    #ElseIf Mac Then
         strScript = "set AppleScript's text item delimiters to ""#@#@""" & vbLf & _
                     "return (paragraphs of (read (""" & pstrFeatureNameFile & """ as alias) as Çclass utf8È)) as string"
         varFileText = Split(MacScript(strScript), "#@#@")
