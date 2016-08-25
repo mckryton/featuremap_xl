@@ -27,7 +27,7 @@ As a result your map could look like this:
 From my understanding [BDD](https://en.wikipedia.org/wiki/Behavior-driven_development) features are made for the development process in the first place. So the regular workflow is define the feature, write a test and develop the code. After a while you end with a lot of features (and scenarios). To get an overview about what your software does you have to read all those features and make an map of them in your mind. That's why I wrote this script. It will generate the map for you. 
 
 ##### Why Excel?
-You may have noticed that I started with an script for Omnigraffle to be able to modify the script results in a comfortable way. But to make the script availble for more users I was looking for a more common tool. I choose Excel because it has sufficient capabilities for drawing, it has a very powerful scripting support for Mac and Windows  and is quite common among potential users.
+You may have noticed that I started with an [script for Omnigraffle](https://github.com/mckryton/featuremap) to be able to modify the script results in a comfortable way. But to make the script available for more users I was looking for a more common tool. I chose Excel because it has sufficient capabilities for drawing, it has a very powerful scripting support for Mac and Windows  and is quite common among potential users.
 
 ### modeling
 The default setup is to draw a box with four colums of use case bubbles. Close to the border you will see the features while all the related scenarios are placed inside. Note that the feature bubbles are surrounded by thicker lines.
