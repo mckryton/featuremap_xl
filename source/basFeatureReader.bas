@@ -185,8 +185,9 @@ Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
         
         For lngFeatureFileIndex = 0 To UBound(varFeatureFiles)
             varFeatureFilePath = Split(varFeatureFiles(lngFeatureFileIndex), "/")
-            'remove path from file name
-            varFeatureFiles(lngFeatureFileIndex) = varFeatureFilePath(UBound(varFeatureFilePath))
+            'remove the path from file name and translate decoded umlauts
+            varFeatureFiles(lngFeatureFileIndex) = basSystem.decomposeUrlPath("file://" & _
+                                                           varFeatureFilePath(UBound(varFeatureFilePath)))
         Next
 
         AppActivate "Microsoft Excel"
@@ -204,6 +205,7 @@ Private Function getFeatureFileNames(pstrFeatureNameDir As String) As Variant
         varFeatureFiles = Split(varFeatureFiles, ", ")
         For lngFeatureFileIndex = 0 To UBound(varFeatureFiles)
             varFeatureFilePath = Split(varFeatureFiles(lngFeatureFileIndex), "/")
+            'remove the path from file name and translate decoded umlauts
             varFeatureFiles(lngFeatureFileIndex) = basSystem.decomposeUrlPath("file://" & _
                                                         varFeatureFilePath(UBound(varFeatureFilePath)))
         Next
@@ -268,7 +270,12 @@ Private Function readFeatureFile(ByVal pstrFeatureNameFile As String) As Collect
 
         basSystem.logd "call ascript for file " & pstrFeatureNameFile
         varScriptResult = CStr(AppleScriptTask("featuremap_xl.scpt", "readFeatureFile", pstrFeatureNameFile))
-        basSystem.logd "file contains >" & varScriptResult
+        basSystem.logd "file contains >" & varScriptResult & "<"
+
+        If LCase(CStr(varScriptResult)) = "cancel" Then
+            End
+        End If
+
         varFileText = Split(varScriptResult, "#@#@")
 
     #ElseIf Mac Then
