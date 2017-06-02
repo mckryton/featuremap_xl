@@ -20,6 +20,8 @@ Attribute VB_Name = "basModelVisualizer"
 'Declarations
 
 'Declare variables
+Dim mcolColorRules As New Collection    'container for rules defining border and
+                                        '   backgroundcolors for items depending on tag names
 
 'Options
 Option Explicit
@@ -90,6 +92,7 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
     Set wshDrawing = pwshDrawing
     blnHideAggregates = pcolDrawingOptions(cstrOptionNameHideAggregates)
     blnDrawDomainsOnSeparatePages = pcolDrawingOptions(cstrOptionNameDrawDomainsOnSeparatePages)
+    ColorRules = pcolDrawingOptions(cstrOptionNameColorRules)
     lngDomainCount = 0
     'start drawing on the left side of a domain box
     blnDrawOnLeftSide = True
@@ -411,6 +414,8 @@ Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, 
     Dim lngCurrentFeatureScenarioCount As Long
     Dim lngOtherFeaturesScenarioCount As Long
     Dim lngScenarioCountOffsetY As Long
+    Dim lngFillColor As Long                    'rgb color value for background
+    Dim lngBorderColor As Long                  'rgb color value for border
     
     On Error GoTo error_handler
     'get the number of the scenarios assigned to the current feature
@@ -450,15 +455,9 @@ Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, 
 '    set vStatusColor to my getStatusColor(status of pFeatureTags)
 '
     basSystem.log "draw feature >" & pstrFeatureName & "<"
-'    tell application "OmniGraffle"
-'        set vLayerModel to layer "functions" of canvas "model" of pDrawingDoc
-'        make new shape at end of graphics of vLayerModel with properties Â
-'            {name:"Circle", textSize:{0.8, 0.7}, size:{cItemWidth, cItemHeight}, text:{alignment:center, text:pFeatureName}, origin:{vOriginX, vOriginY}, magnets:{{0, 0.5}, {0, -0.5}, {0.5, 0}, {-0.5, 0}, {-0.29, -0.41}, {-0.29, 0.41}, {0.29, 0.41}, {0.29, -0.41}}, textPosition:{0.1, 0.15}, thickness:1, vertical padding:0, user data:{aggregate:pAggregateName, itemtype:"feature", domain:pDomainName, featureid:pFeatureId, featurefileid:pFeatureFileId}, fill color:vStatusColor}
-'    end tell
-    
     Set shpFeature = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
     shpFeature.TextFrame.Characters.Text = pstrFeatureName
-    'format domain box background
+    'format feature background
     With shpFeature.Fill
         .Visible = msoTrue
         .ForeColor.ObjectThemeColor = msoThemeColorBackground1
@@ -517,6 +516,8 @@ Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long,
     Dim lngDomainWidth As Long
     Dim lngDomainHeight As Long
     Dim shpScenario As Shape
+    Dim lngFillColor As Long
+    Dim lngBorderColor As Long
     
     On Error GoTo error_handler
     If pblnDrawDomainsOnSeparatePages Then
@@ -539,23 +540,18 @@ Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long,
     End If
     lngOriginY = clngDocPaddingY + plngScenarioCount * ((2 * clngItemPaddingY) + clngItemHeight)
 
-'
-'    -- set fill color depending on the feature status
-'    set vStatusColor to my getStatusColor(status of tags of pScenario)
-'
+
+    'set fill color depending on the feature status
+    lngFillColor = getItemColor(pcolScenario("tags"), cstrColorTargetBackground, cstrHexColorWhite)
+    lngBorderColor = getItemColor(pcolScenario("tags"), cstrColorTargetBorder, cstrHexColorBlack)
+
     basSystem.log "draw scenario >" & pcolScenario("name") & "<"
-'    tell application "OmniGraffle"
-'        set vLayerModel to layer "functions" of canvas "model" of pDrawingDoc
-'        make new shape at end of graphics of vLayerModel with properties Â
-'            {name:"Circle", textSize:{0.8, 0.7}, size:{cItemWidth, cItemHeight}, text:{alignment:center, text:name of pScenario}, origin:{vOriginX, vOriginY}, magnets:{{0, 0.5}, {0, -0.5}, {0.5, 0}, {-0.5, 0}, {-0.29, -0.41}, {-0.29, 0.41}, {0.29, 0.41}, {0.29, -0.41}}, textPosition:{0.1, 0.15}, thickness:0.25, vertical padding:0, user data:{featureid:pFeatureId, featurefileid:pFeatureFileId, feature:pFeatureName, itemtype:"scenario", domain:pDomainName}, fill color:vStatusColor}
-'    end tell
-    
     Set shpScenario = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
     shpScenario.TextFrame.Characters.Text = pcolScenario("name")
     'format domain box background
     With shpScenario.Fill
         .Visible = msoTrue
-        .ForeColor.ObjectThemeColor = msoThemeColorBackground1
+        .ForeColor.RGB = lngFillColor
         .ForeColor.TintAndShade = 0
         .Transparency = 0
         .Solid
@@ -564,7 +560,8 @@ Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long,
     With shpScenario.Line
         .Weight = 0.5
         .Visible = msoTrue
-        .ForeColor.ObjectThemeColor = msoThemeColorText1
+        '.ForeColor.ObjectThemeColor = msoThemeColorText1
+        .ForeColor.RGB = lngBorderColor
         .ForeColor.TintAndShade = 0
     End With
     'format domain box text
@@ -649,3 +646,65 @@ Public Sub drawConnections(pwshDrawing As Worksheet, pstrSourceShapeName As Stri
 error_handler:
     basSystem.log_error "basModelVisualizer.drawConnections"
 End Sub
+'-------------------------------------------------------------
+' Description   : container property for color rules
+' Parameter     :
+' Returnvalue   : collection object
+'-------------------------------------------------------------
+Public Property Get ColorRules() As Collection
+
+    On Error GoTo error_handler
+    Set ColorRules = mcolColorRules
+    Exit Property
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.Get ColorRules"
+End Property
+'-------------------------------------------------------------
+' Description   : container property for color rules
+' Parameter     :
+' Returnvalue   :
+'-------------------------------------------------------------
+Public Property Let ColorRules(ByVal pcolColorRules As Collection)
+
+    On Error GoTo error_handler
+    Set mcolColorRules = pcolColorRules
+    Exit Property
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.Let ColorRules"
+End Property
+'-------------------------------------------------------------
+' Description   : determines if a background or fill color is set by a rule
+' Parameter     : pcolTags          -
+'                 pstrTarget        - border or background
+'                 pstrDefaultColor  - optional, set to black if left out
+' Returnvalue   : rgb colorvalue as long
+'-------------------------------------------------------------
+Private Function getItemColor(pcolTags As Collection, pstrTarget As String, Optional pstrDefaultColor As String)
+
+    Dim strRuleColor As String                  'hex color value from rule
+    Dim strRuleId As String
+    Dim strTag As Variant
+        
+    On Error GoTo error_handler
+    'set black as default color
+    If IsMissing(pstrDefaultColor) Then
+        strRuleColor = cstrHexColorBlack
+    Else
+        strRuleColor = pstrDefaultColor
+    End If
+    On Error Resume Next
+    For Each strTag In pcolTags
+        strRuleColor = ColorRules(strTag & "@" & pstrTarget)
+        If strRuleColor <> cstrHexColorBlack Then
+            Exit For
+        End If
+    Next
+    On Error GoTo error_handler
+    getItemColor = basSystem.hexToRGB(strRuleColor)
+    Exit Function
+    
+error_handler:
+    basSystem.log_error "basModelVisualizer.getItemColor"
+End Function

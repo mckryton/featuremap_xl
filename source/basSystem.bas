@@ -203,3 +203,27 @@ Private Sub exportCode()
 error_handler:
     basSystem.log_error "basSystem.exportCode"
 End Sub
+'-------------------------------------------------------------
+' Description   : converts hex color value from string to long
+' Parameter     : pstrHexColor
+' Returnvalue   : long color value
+'-------------------------------------------------------------
+Public Function hexToRGB(pstrHexColor As String) As Long
+    
+    Dim intRed, intGreen, intBlue As Integer
+
+    On Error GoTo error_handler
+    'Convert Hex to RGB
+    pstrHexColor = Replace(pstrHexColor, "#", "")
+    pstrHexColor = Right("000000" & pstrHexColor, 6)
+    intBlue = Val("&H" & Mid(pstrHexColor, 1, 2))
+    intGreen = Val("&H" & Mid(pstrHexColor, 3, 2))
+    intRed = Val("&H" & Mid(pstrHexColor, 5, 2))
+    
+    'Return RGB Code
+    hexToRGB = RGB(intRed, intGreen, intBlue)
+    Exit Function
+
+error_handler:
+    basSystem.log_error "basSystem.HexToRGB"
+End Function

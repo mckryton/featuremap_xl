@@ -3,7 +3,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmOptionsTemplate
    Caption         =   "featuremap options"
    ClientHeight    =   6000
    ClientLeft      =   0
-   ClientTop       =   -11500
+   ClientTop       =   -14720
    ClientWidth     =   10000
    OleObjectBlob   =   "frmOptionsTemplate.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -157,11 +157,21 @@ End Property
 '-------------------------------------------------------------
 Public Property Get DrawingOptions() As Collection
     
+    Dim colColorRules As New Collection
+    Dim lngRule As Long
+    
     On Error GoTo error_handler
     If TypeName(mcolDrawingOptions) = "Nothing" Then
         Set mcolDrawingOptions = New Collection
         mcolDrawingOptions.Add Me.chkHideAggregates.Value, cstrOptionNameHideAggregates
         mcolDrawingOptions.Add Me.chkDrawDomainsOnSeparatePages.Value, cstrOptionNameDrawDomainsOnSeparatePages
+        'read color rules into collection
+        For lngRule = 0 To Me.lstRules.ListCount - 1
+            'color rule contains a hex color code and is identified by tag name@target e.g. status-done@background
+            colColorRules.Add Me.lstRules.List(lngRule, 2), _
+                Me.lstRules.List(lngRule, 0) & "@" & Me.lstRules.List(lngRule, 1)
+            Next
+        mcolDrawingOptions.Add colColorRules, cstrOptionNameColorRules
     End If
     Set DrawingOptions = mcolDrawingOptions
     Exit Property

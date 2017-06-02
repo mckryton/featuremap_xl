@@ -5,4 +5,5 @@ As a user I want the model visualizer to apply given color rules so that I can r
 
   Scenario: set border color for am element
 
+
   Scenario: set fill color for am element

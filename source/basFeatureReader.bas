@@ -377,18 +377,8 @@ Private Sub findTags(pcolFeatureTags As Collection, pstrParagraph As String)
             'tags are marked with an @ sign
             If Left(varPieces(lngPieceIndex), 1) = "@" Then
                 strTag = Right(varPieces(lngPieceIndex), Len(varPieces(lngPieceIndex)) - 1)
-                'key-value tags are separated by a - sign
-                varTag = Split(strTag, "-")
-                If UBound(varTag) = 0 Then
-                    'it's a single tag
-                    strTagKey = strTag
-                    strTagValue = strTag
-                Else
-                    strTagKey = varTag(0)
-                    strTagValue = Right(strTag, Len(strTag) - Len(strTagKey) - 1)
-                End If
             On Error GoTo found_duplicate_tag
-            pcolFeatureTags.Add strTagValue, strTagKey
+            pcolFeatureTags.Add strTag, strTag
             On Error GoTo error_handler
             End If
         Next

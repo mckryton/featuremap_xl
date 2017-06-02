@@ -35,3 +35,16 @@ Global Const cItemTypeDomain = "domain"
 Global Const cItemTypeAggregate = "aggregate"
 Global Const cItemTypeFeature = "feature"
 Global Const cItemTypeScenario = "scenario"
+
+'setting names used in collection objects
+Global Const cstrOptionNameHideAggregates = "hideAggregates"
+Global Const cstrOptionNameDrawDomainsOnSeparatePages = "drawDomainsOnSeparatePages"
+Global Const cstrOptionNameColorRules = "colorRules"
+
+'color target names
+Global Const cstrColorTargetBackground = "background"
+Global Const cstrColorTargetBorder = "border"
+
+'hex color values
+Global Const cstrHexColorBlack = "000000"
+Global Const cstrHexColorWhite = "FFFFFF"

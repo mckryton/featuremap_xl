@@ -1,8 +1,8 @@
 @d-featuremap @s-available
 Feature: feature reader - open files
 
- 
-  @FEM-1 @OPEN
+
+  @FEM-1 @OPEN @s-backlog
   Scenario: get directory from commandline parameters
 
 
@@ -17,12 +17,10 @@ Feature: feature reader - open files
 
 
 
-  @FEM-1 @OPEN
+  @FEM-1 @OPEN @s-backlog
   Scenario: show error message for invalid commandline parameter
 
 
 
-  @FEM-1 @OPEN
+  @FEM-1 @OPEN @s-backlog
   Scenario: show error message if feature dir doesn't contain any feature file
-
-
