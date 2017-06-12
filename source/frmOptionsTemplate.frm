@@ -3,7 +3,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmOptionsTemplate
    Caption         =   "featuremap options"
    ClientHeight    =   6000
    ClientLeft      =   0
-   ClientTop       =   -14720
+   ClientTop       =   -15640
    ClientWidth     =   10000
    OleObjectBlob   =   "frmOptionsTemplate.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -40,8 +40,6 @@ Dim mcolDrawingOptions As Collection
 'Options
 Option Explicit
 
-
-
 '-------------------------------------------------------------
 ' Description   : add a new color rule
 ' Parameter     :
@@ -62,6 +60,10 @@ Private Sub cmdAddRule_Click()
     'add rule if edit form wasn't canceled
     If frmEdit.FormCanceled = False Then
         strTagName = frmEdit.txtTagName
+        'remove leading @ sign from tags
+        If Left(strTagName, 1) = "@" Then
+            strTagName = Right(strTagName, Len(strTagName) - 1)
+        End If
         If frmEdit.optBackground.Value = True Then
             strTarget = "background"
         Else
@@ -75,6 +77,7 @@ Private Sub cmdAddRule_Click()
             .List(lngListIndex, 1) = strTarget
             .List(lngListIndex, 2) = strColor
         End With
+        Me.saveRule strTagName, strTarget, strColor
     End If
     Me.Show
     Set frmEdit = Nothing
@@ -118,19 +121,38 @@ error_handler:
     basSystem.log_error "frmOptions.cmdOk_Click"
 End Sub
 
-
-
 '-------------------------------------------------------------
 ' Description   : init options form
 ' Parameter     :
 ' Returnvalue   :
 '-------------------------------------------------------------
 Private Sub UserForm_Initialize()
+    
+    Dim dcpRuleProperty As DocumentProperty
+    Dim strTagName As String
+    Dim strTarget As String
+    Dim strColor As String
+    Dim lngListIndex As Long
 
     On Error GoTo error_handler
     mblnFormCanceled = False
     Me.chkHideAggregates.Value = cblnHideAggregatesDefault
     Me.chkDrawDomainsOnSeparatePages = cblnDrawDomainsOnSeparatePagesDefault
+    'load rules from document properties
+    For Each dcpRuleProperty In ThisWorkbook.CustomDocumentProperties
+        If Left(dcpRuleProperty.Name, 5) = "rule_" Then
+            strTagName = Mid(dcpRuleProperty.Name, 6, InStr(5, dcpRuleProperty.Name, "@") - 6)
+            strTarget = Right(dcpRuleProperty.Name, Len(dcpRuleProperty.Name) - InStr(5, dcpRuleProperty.Name, "@"))
+            strColor = dcpRuleProperty.Value
+            lngListIndex = Me.lstRules.ListCount
+            With Me.lstRules
+                .AddItem
+                .List(lngListIndex, 0) = strTagName
+                .List(lngListIndex, 1) = strTarget
+                .List(lngListIndex, 2) = strColor
+            End With
+        End If
+    Next
     Exit Sub
     
 error_handler:
@@ -179,4 +201,22 @@ Public Property Get DrawingOptions() As Collection
 error_handler:
     basSystem.log_error "frmOptions.Get DrawingOptions"
 End Property
+'-------------------------------------------------------------
+' Description   : save rule as document property
+' Parameter     :
+'-------------------------------------------------------------
+Public Sub saveRule(pstrTagName As String, pstrTarget As String, pstrColor As String)
 
+    On Error Resume Next
+    ThisWorkbook.CustomDocumentProperties("rule_" & pstrTagName & "@" & pstrTarget).Value = pstrColor
+    If Err.Number > 0 Then
+        ThisWorkbook.CustomDocumentProperties.Add Name:="rule_" & pstrTagName & "@" & pstrTarget, _
+                                                    LinkToContent:=False, _
+                                                    Type:=msoPropertyTypeString, _
+                                                    Value:=pstrColor
+    End If
+    Exit Sub
+    
+error_handler:
+    basSystem.log_error "frmOptions.saveRule"
+End Sub
