@@ -702,7 +702,7 @@ Private Function getItemColor(pcolTags As Collection, pstrTarget As String, Opti
         End If
     Next
     On Error GoTo error_handler
-    getItemColor = basSystem.hexToRGB(strRuleColor)
+    getItemColor = basSystem.hexToRgb(strRuleColor)
     Exit Function
     
 error_handler:

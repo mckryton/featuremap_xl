@@ -208,7 +208,7 @@ End Sub
 ' Parameter     : pstrHexColor
 ' Returnvalue   : long color value
 '-------------------------------------------------------------
-Public Function hexToRGB(pstrHexColor As String) As Long
+Public Function hexToRgb(pstrHexColor As String) As Long
     
     Dim intRed, intGreen, intBlue As Integer
 
@@ -221,7 +221,7 @@ Public Function hexToRGB(pstrHexColor As String) As Long
     intRed = Val("&H" & Mid(pstrHexColor, 5, 2))
     
     'Return RGB Code
-    hexToRGB = RGB(intRed, intGreen, intBlue)
+    hexToRgb = RGB(intRed, intGreen, intBlue)
     Exit Function
 
 error_handler:
