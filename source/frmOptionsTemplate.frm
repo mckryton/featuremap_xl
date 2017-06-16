@@ -217,7 +217,15 @@ Private Sub lstRules_AfterUpdate()
 error_handler:
     basSystem.log_error "frmOptions.lstRules_AfterUpdate"
 End Sub
+'-------------------------------------------------------------
+' Description   : double click on a list items means edit rule
+' Parameter     :
+' Returnvalue   :
+'-------------------------------------------------------------Ü
+Private Sub lstRules_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
 
+    cmdEditRule_Click
+End Sub
 
 '-------------------------------------------------------------
 ' Description   : init options form
