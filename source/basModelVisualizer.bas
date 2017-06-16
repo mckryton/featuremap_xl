@@ -139,10 +139,10 @@ Public Function visualizeModel(pwshDrawing As Worksheet, pcolDomainModel As Coll
                 lngAggregateScenarioCount = lngAggregateScenarioCount + colFeature("scenarios").Count
                 strShapeName = drawFeature(wshDrawing, lngDomainCount, blnDrawOnLeftSide, _
                         blnDrawDomainsOnSeparatePages, intTypeCount, _
-                        colDomain("name"), colAggregate("name"), colFeature("id"), colFeature("fileId"), _
-                        colFeature("name"), colFeature("scenarios").Count, lngScenarioCount)
+                        colDomain("name"), colAggregate("name"), colFeature, lngScenarioCount)
                 colConnectionTargetFeatures.Add strShapeName
                 drawConnections wshDrawing, strShapeName, colConnectionTargetScenarios
+                Application.ScreenUpdating = True
                 Set colConnectionTargetScenarios = Nothing
                 'count how many scenarios are on each side of the domain box to be able to calculate the size of the domain box
                 If blnDrawOnLeftSide = True Then
@@ -392,17 +392,14 @@ End Function
 '                 pintTypeCount        - number of drawn use case types
 '                 pstrDomainName
 '                 pstrAggregateName
-'                 plngFeatureId
-'                 plngFeatureFileId
-'                 pstrFeatureName
+'                 pcolFeature
 '                 plngScenarioCount
 ' Returnvalue   : shape name as string
 '-------------------------------------------------------------
 Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, ByVal pblnDrawOnLeftSide As Boolean, _
                         pblnDrawDomainsOnSeparatePages As Boolean, pintTypeCount As Integer, _
                         ByVal pstrDomainName As String, pstrAggregateName As String, _
-                        plngFeatureId As Long, plngFeatureFileId As Long, pstrFeatureName As String, _
-                        plngCurrentFeatureScenarioCount As Long, plngAllScenarioCount As Long) As String
+                        pcolFeature As Collection, plngAllScenarioCount As Long) As String
     
     Dim lngDomainOffsetX As Long
     Dim lngOriginX As Long
@@ -419,7 +416,7 @@ Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, 
     
     On Error GoTo error_handler
     'get the number of the scenarios assigned to the current feature
-    lngCurrentFeatureScenarioCount = plngCurrentFeatureScenarioCount
+    lngCurrentFeatureScenarioCount = pcolFeature("scenarios").Count
     
     If lngCurrentFeatureScenarioCount = 0 Then
         'leave space for one scenario if the feature hasn't one
@@ -451,16 +448,17 @@ Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, 
                         + clngItemWidth
     End If
 
-'    -- set fill color depending on the feature status
-'    set vStatusColor to my getStatusColor(status of pFeatureTags)
-'
-    basSystem.log "draw feature >" & pstrFeatureName & "<"
+    'set fill color depending if color rule exists and match
+    lngFillColor = getItemColor(pcolFeature("tags"), cstrColorTargetBackground, cstrHexColorWhite)
+    lngBorderColor = getItemColor(pcolFeature("tags"), cstrColorTargetBorder, cstrHexColorBlack)
+
+    basSystem.log "draw feature >" & pcolFeature("name") & "<"
     Set shpFeature = pwshDrawing.Shapes.AddShape(msoShapeOval, lngOriginX, lngOriginY, clngItemWidth, clngItemHeight)
-    shpFeature.TextFrame.Characters.Text = pstrFeatureName
+    shpFeature.TextFrame.Characters.Text = pcolFeature("name")
     'format feature background
     With shpFeature.Fill
         .Visible = msoTrue
-        .ForeColor.ObjectThemeColor = msoThemeColorBackground1
+        .ForeColor.RGB = lngFillColor
         .ForeColor.TintAndShade = 0
         .Transparency = 0
         .Solid
@@ -469,7 +467,7 @@ Private Function drawFeature(pwshDrawing As Worksheet, plngDomainCount As Long, 
     With shpFeature.Line
         .Weight = 2
         .Visible = msoTrue
-        .ForeColor.ObjectThemeColor = msoThemeColorText1
+        .ForeColor.RGB = lngBorderColor
         .ForeColor.TintAndShade = 0
     End With
     'format domain box text
@@ -539,9 +537,8 @@ Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long,
                         + clngItemPaddingX
     End If
     lngOriginY = clngDocPaddingY + plngScenarioCount * ((2 * clngItemPaddingY) + clngItemHeight)
-
-
-    'set fill color depending on the feature status
+    
+    'set fill color depending if color rule exists and match
     lngFillColor = getItemColor(pcolScenario("tags"), cstrColorTargetBackground, cstrHexColorWhite)
     lngBorderColor = getItemColor(pcolScenario("tags"), cstrColorTargetBorder, cstrHexColorBlack)
 
@@ -560,7 +557,6 @@ Private Function drawScenario(pwshDrawing As Worksheet, plngDomainCount As Long,
     With shpScenario.Line
         .Weight = 0.5
         .Visible = msoTrue
-        '.ForeColor.ObjectThemeColor = msoThemeColorText1
         .ForeColor.RGB = lngBorderColor
         .ForeColor.TintAndShade = 0
     End With
@@ -686,18 +682,20 @@ Private Function getItemColor(pcolTags As Collection, pstrTarget As String, Opti
     Dim strRuleColor As String                  'hex color value from rule
     Dim strRuleId As String
     Dim strTag As Variant
+    Dim strDefaultColor As String
         
     On Error GoTo error_handler
     'set black as default color
     If IsMissing(pstrDefaultColor) Then
-        strRuleColor = cstrHexColorBlack
+        strDefaultColor = cstrHexColorBlack
     Else
-        strRuleColor = pstrDefaultColor
+        strDefaultColor = pstrDefaultColor
     End If
+    strRuleColor = strDefaultColor
     On Error Resume Next
     For Each strTag In pcolTags
         strRuleColor = ColorRules(strTag & "@" & pstrTarget)
-        If strRuleColor <> cstrHexColorBlack Then
+        If strRuleColor <> strDefaultColor Then
             Exit For
         End If
     Next
