@@ -174,7 +174,6 @@ Private Sub cmdEditRule_Click()
         strColor = frmEdit.txtColor
         lngListIndex = Me.lstRules.ListIndex
         With Me.lstRules
-            .AddItem
             .List(lngListIndex, 0) = strNewTagName
             .List(lngListIndex, 1) = strNewTarget
             .List(lngListIndex, 2) = strColor
